@@ -1,0 +1,942 @@
+{
+	"info": {
+		"_postman_id": "e8a91b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+		"name": "EMS Backend API Collection",
+		"description": "Complete API Collection for Employee Management System (EMS) Backend built with Django REST Framework.\n\n### Authentication\nThis collection uses JWT Bearer Token authentication. \n1. Register a user or Login with existing credentials.\n2. The **Login** request automatically sets the `access_token` and `refresh_token` environment variables.\n3. Requests in the **Company Management** folder inherit the Bearer Token authentication automatically.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "User Authentication",
+			"description": "Endpoints for User Registration, Login, and JWT Token Refresh.",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/register/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"register",
+								""
+							]
+						},
+						"description": "Registers a new user account in the system."
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.tokens) {",
+									"    pm.environment.set('access_token', response.data.tokens.access);",
+									"    pm.environment.set('refresh_token', response.data.tokens.refresh);",
+									"    console.log('Access and Refresh tokens updated in environment.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"johndoe@example.com\",\n  \"password\": \"Password123!\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/login/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"login",
+								""
+							]
+						},
+						"description": "Authenticates user with username or email and returns JWT access & refresh tokens."
+					},
+					"response": []
+				},
+				{
+					"name": "Refresh Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.access) {",
+									"    pm.environment.set('access_token', response.access);",
+									"    console.log('Access token refreshed.');",
+									"} else if (response && response.data && response.data.access) {",
+									"    pm.environment.set('access_token', response.data.access);",
+									"    console.log('Access token refreshed.');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/token/refresh/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"token",
+								"refresh",
+								""
+							]
+						},
+						"description": "Generates a new access token using a valid refresh token."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Company Management",
+			"description": "Endpoints to Manage Companies (CRUD operations). Requires JWT Authorization.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "Get All Companies",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/company/?search=&is_active=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"company",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by company name or code (case-insensitive)"
+								},
+								{
+									"key": "is_active",
+									"value": "true",
+									"description": "Filter by active status (true/false)"
+								}
+							]
+						},
+						"description": "Retrieves a list of all companies with optional search and active status filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Company",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('company_id', response.data.id);",
+									"    console.log('Created company_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Acme Corporation\",\n  \"code\": \"ACME001\",\n  \"email\": \"contact@acme.com\",\n  \"phone\": \"+1234567890\",\n  \"website\": \"https://acme.com\",\n  \"address\": \"123 Business Way\",\n  \"city\": \"Metropolis\",\n  \"state\": \"NY\",\n  \"country\": \"USA\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/company/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"company",
+								""
+							]
+						},
+						"description": "Creates a new company record."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Company Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/company/{{company_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"company",
+								"{{company_id}}",
+								""
+							]
+						},
+						"description": "Retrieves the full details of a specific company by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Company (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Acme Global Inc\",\n  \"code\": \"ACME001\",\n  \"email\": \"info@acmeglobal.com\",\n  \"phone\": \"+1987654321\",\n  \"website\": \"https://acmeglobal.com\",\n  \"address\": \"456 Innovation Blvd\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"country\": \"USA\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/company/{{company_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"company",
+								"{{company_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of an existing company record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Company Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Acme Global Enterprises\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/company/{{company_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"company",
+								"{{company_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific fields of an existing company record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Company",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/company/{{company_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"company",
+								"{{company_id}}",
+								""
+							]
+						},
+						"description": "Deletes a company record by ID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Department Management",
+			"description": "Endpoints to Manage Departments (CRUD operations). Requires JWT Authorization.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "Get All Departments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/department/?search=&company=&is_active=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"department",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by department name or description (case-insensitive)"
+								},
+								{
+									"key": "company",
+									"value": "",
+									"description": "Filter by company ID"
+								},
+								{
+									"key": "is_active",
+									"value": "true",
+									"description": "Filter by active status (true/false)"
+								}
+							]
+						},
+						"description": "Retrieves a list of all departments with optional search, company, and active status filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Department",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('department_id', response.data.id);",
+									"    console.log('Created department_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Engineering\",\n  \"description\": \"Software development and engineering department\",\n  \"manager\": 1,\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/department/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"department",
+								""
+							]
+						},
+						"description": "Creates a new department record."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Department Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/department/{{department_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"department",
+								"{{department_id}}",
+								""
+							]
+						},
+						"description": "Retrieves the full details of a specific department by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Department (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Product & Engineering\",\n  \"description\": \"Product design and software development department\",\n  \"manager\": 1,\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/department/{{department_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"department",
+								"{{department_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of an existing department record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Department Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Core Engineering\",\n  \"is_active\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/department/{{department_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"department",
+								"{{department_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific fields of an existing department record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Department",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/department/{{department_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"department",
+								"{{department_id}}",
+								""
+							]
+						},
+						"description": "Deletes a department record by ID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Employee Management",
+			"description": "Endpoints to Manage Employees (CRUD operations). Requires JWT Authorization.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "Get All Employees",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/employee/?search=&company=&department=&status=&employment_type=&gender=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"employee",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by employee code, designation, phone, or emergency contact name"
+								},
+								{
+									"key": "company",
+									"value": "",
+									"description": "Filter by company ID"
+								},
+								{
+									"key": "department",
+									"value": "",
+									"description": "Filter by department ID"
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by status (ACTIVE, INACTIVE, ON_LEAVE, TERMINATED, RESIGNED)"
+								},
+								{
+									"key": "employment_type",
+									"value": "",
+									"description": "Filter by employment type (FULL_TIME, PART_TIME, CONTRACT, INTERN, TEMPORARY)"
+								},
+								{
+									"key": "gender",
+									"value": "",
+									"description": "Filter by gender (Male, Female, Other)"
+								}
+							]
+						},
+						"description": "Retrieves a list of all employees with optional search, company, department, status, employment type, and gender filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Employee",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('employee_id', response.data.id);",
+									"    console.log('Created employee_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Senior Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Tech Street, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/employee/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"employee",
+								""
+							]
+						},
+						"description": "Creates a new employee record."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"employee",
+								"{{employee_id}}",
+								""
+							]
+						},
+						"description": "Retrieves the full details of a specific employee by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Employee (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Lead Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"456 Tech Avenue, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"employee",
+								"{{employee_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of an existing employee record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Employee Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"designation\": \"Principal Software Engineer\",\n  \"status\": \"ACTIVE\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"employee",
+								"{{employee_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific fields of an existing employee record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Employee",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"employee",
+								"{{employee_id}}",
+								""
+							]
+						},
+						"description": "Deletes an employee record by ID."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Role Management",
+			"description": "Endpoints to Manage Roles (CRUD operations). Requires JWT Authorization.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "Get All Roles",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/role/?search=&company=",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by role name or description (case-insensitive)"
+								},
+								{
+									"key": "company",
+									"value": "",
+									"description": "Filter by company ID"
+								}
+							]
+						},
+						"description": "Retrieves a list of all roles with optional search and company filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('role_id', response.data.id);",
+									"    console.log('Created role_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Senior Developer\",\n  \"description\": \"Senior Software Developer role responsible for feature implementation and technical leadership\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/role/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								""
+							]
+						},
+						"description": "Creates a new role record."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/role/{{role_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"{{role_id}}",
+								""
+							]
+						},
+						"description": "Retrieves the full details of a specific role by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Lead Developer\",\n  \"description\": \"Lead Developer role managing team delivery and technical architecture\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/role/{{role_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"{{role_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of an existing role record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Tech Lead\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/role/{{role_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"{{role_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific fields of an existing role record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/role/{{role_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"{{role_id}}",
+								""
+							]
+						},
+						"description": "Deletes a role record by ID."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
