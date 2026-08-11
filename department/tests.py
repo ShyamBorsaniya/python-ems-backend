@@ -24,7 +24,8 @@ class DepartmentModelTest(TestCase):
             username="manager1",
             email="manager1@example.com",
             password="Password123!",
-            role=self.role
+            role=self.role,
+            company=self.company
         )
         self.department = Department.objects.create(
             company=self.company,
@@ -57,7 +58,8 @@ class DepartmentAPITest(TestCase):
             username="testuser",
             password="testpassword123",
             email="user@example.com",
-            role=self.role
+            role=self.role,
+            company=self.company
         )
         self.client.force_authenticate(user=self.user)
         self.department = Department.objects.create(

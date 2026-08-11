@@ -22,7 +22,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"role\": 1\n}"
+							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"company\": 1,\n  \"role\": 1\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/user/register/",
@@ -36,7 +36,7 @@
 								""
 							]
 						},
-						"description": "Registers a new user account with a mandatory role ID in the system."
+						"description": "Registers a new user account in the system (company ID and role ID are optional for superusers)."
 					},
 					"response": []
 				},
@@ -151,7 +151,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/user/?search=&role=&is_active=true",
+							"raw": "{{base_url}}/api/user/?search=&company=&role=&is_active=true",
 							"host": [
 								"{{base_url}}"
 							],
@@ -167,6 +167,11 @@
 									"description": "Filter by username, email, first_name, or last_name"
 								},
 								{
+									"key": "company",
+									"value": "",
+									"description": "Filter by company ID"
+								},
+								{
 									"key": "role",
 									"value": "",
 									"description": "Filter by role ID"
@@ -178,7 +183,7 @@
 								}
 							]
 						},
-						"description": "Retrieves a list of all registered users with optional search, role, and active status filters. Requires JWT Bearer Token authorization."
+						"description": "Retrieves a list of all registered users with optional search, company, role, and active status filters. Requires JWT Bearer Token authorization."
 					},
 					"response": []
 				},
@@ -235,7 +240,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"role\": 1\n}"
+							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"company\": 1,\n  \"role\": 1\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/user/1/",

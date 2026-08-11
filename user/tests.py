@@ -27,6 +27,7 @@ class UserAuthTests(APITestCase):
             "first_name": "Test",
             "last_name": "User",
             "role": self.role.id,
+            "company": self.company.id,
         }
 
     def test_user_registration(self):
@@ -39,6 +40,8 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["user"]["username"], "testuser")
         self.assertEqual(response.data["data"]["user"]["role"], self.role.id)
         self.assertEqual(response.data["data"]["user"]["role_name"], "Software Engineer")
+        self.assertEqual(response.data["data"]["user"]["company"], self.company.id)
+        self.assertEqual(response.data["data"]["user"]["company_name"], "Test Corp")
 
     def test_user_registration_without_role_fails(self):
         data = self.user_data.copy()
@@ -47,6 +50,14 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("role", response.data["errors"])
+
+    def test_user_registration_without_company_fails(self):
+        data = self.user_data.copy()
+        del data["company"]
+        response = self.client.post(self.register_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data["success"])
+        self.assertIn("company", response.data["errors"])
 
     def test_user_login_with_username(self):
         self.client.post(self.register_url, self.user_data, format="json")
@@ -63,6 +74,8 @@ class UserAuthTests(APITestCase):
         self.assertIn("refresh", response.data["data"]["tokens"])
         self.assertEqual(response.data["data"]["user"]["role"], self.role.id)
         self.assertEqual(response.data["data"]["user"]["role_name"], "Software Engineer")
+        self.assertEqual(response.data["data"]["user"]["company"], self.company.id)
+        self.assertEqual(response.data["data"]["user"]["company_name"], "Test Corp")
 
     def test_user_login_with_email(self):
         self.client.post(self.register_url, self.user_data, format="json")
@@ -99,7 +112,8 @@ class UserAuthTests(APITestCase):
             username="authuser",
             email="auth@example.com",
             password="Password123!",
-            role=self.role
+            role=self.role,
+            company=self.company
         )
         self.client.force_authenticate(user=user)
         url = reverse("user-list")
@@ -108,12 +122,29 @@ class UserAuthTests(APITestCase):
         self.assertTrue(response.data["success"])
         self.assertIsInstance(response.data["data"], list)
 
+    def test_list_users_filter_by_company(self):
+        user = User.objects.create_user(
+            username="authuser",
+            email="auth@example.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company
+        )
+        self.client.force_authenticate(user=user)
+        url = f"{reverse('user-list')}?company={self.company.id}"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(len(response.data["data"]), 1)
+        self.assertEqual(response.data["data"][0]["company"], self.company.id)
+
     def test_get_user_detail(self):
         user = User.objects.create_user(
             username="detailuser",
             email="detailuser@example.com",
             password="Password123!",
-            role=self.role
+            role=self.role,
+            company=self.company
         )
         self.client.force_authenticate(user=user)
         url = reverse("user-detail", kwargs={"pk": user.pk})
@@ -121,13 +152,15 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
         self.assertEqual(response.data["data"]["username"], "detailuser")
+        self.assertEqual(response.data["data"]["company"], self.company.id)
 
     def test_update_user_put(self):
         user = User.objects.create_user(
             username="updateuser",
             email="updateuser@example.com",
             password="Password123!",
-            role=self.role
+            role=self.role,
+            company=self.company
         )
         self.client.force_authenticate(user=user)
         url = reverse("user-detail", kwargs={"pk": user.pk})
@@ -137,19 +170,22 @@ class UserAuthTests(APITestCase):
             "first_name": "Updated",
             "last_name": "User",
             "role": self.role.id,
+            "company": self.company.id,
         }
         response = self.client.put(url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
         self.assertEqual(response.data["data"]["first_name"], "Updated")
         self.assertEqual(response.data["data"]["email"], "updateuser_new@example.com")
+        self.assertEqual(response.data["data"]["company"], self.company.id)
 
     def test_update_user_patch(self):
         user = User.objects.create_user(
             username="patchuser",
             email="patchuser@example.com",
             password="Password123!",
-            role=self.role
+            role=self.role,
+            company=self.company
         )
         self.client.force_authenticate(user=user)
         url = reverse("user-detail", kwargs={"pk": user.pk})
@@ -164,7 +200,8 @@ class UserAuthTests(APITestCase):
             username="softdeleteuser",
             email="softdelete@example.com",
             password="Password123!",
-            role=self.role
+            role=self.role,
+            company=self.company
         )
         self.client.force_authenticate(user=user)
         url = reverse("user-detail", kwargs={"pk": user.pk})
@@ -175,5 +212,17 @@ class UserAuthTests(APITestCase):
         # Verify user still exists in database, but is deactivated
         user.refresh_from_db()
         self.assertFalse(user.is_active)
+
+    def test_create_superuser_without_company_or_role(self):
+        superuser = User.objects.create_superuser(
+            username="adminuser",
+            email="admin@example.com",
+            password="AdminPassword123!"
+        )
+        self.assertTrue(superuser.is_superuser)
+        self.assertTrue(superuser.is_staff)
+        self.assertIsNone(superuser.company)
+        self.assertIsNone(superuser.role)
+
 
 

@@ -7,8 +7,17 @@ class User(AbstractUser):
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     role = models.ForeignKey(
         'role.Role',
-        on_delete=models.PROTECT,
-        related_name='users'
+        on_delete=models.SET_NULL,
+        related_name='users',
+        blank=True,
+        null=True
+    )
+    company = models.ForeignKey(
+        'company.Company',
+        on_delete=models.SET_NULL,
+        related_name='users',
+        blank=True,
+        null=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

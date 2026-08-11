@@ -86,9 +86,10 @@ class UserListView(APIView):
     serializer_class = UserSerializer
 
     def get(self, request):
-        users = User.objects.all().select_related('role').order_by('-date_joined')
+        users = User.objects.all().select_related('role', 'company').order_by('-date_joined')
         search_query = request.query_params.get("search", None)
         role_param = request.query_params.get("role", None)
+        company_param = request.query_params.get("company", None)
         is_active_param = request.query_params.get("is_active", None)
 
         if search_query:
@@ -102,6 +103,9 @@ class UserListView(APIView):
 
         if role_param:
             users = users.filter(role_id=role_param)
+
+        if company_param:
+            users = users.filter(company_id=company_param)
 
         if is_active_param is not None:
             is_active = is_active_param.lower() in ["true", "1"]

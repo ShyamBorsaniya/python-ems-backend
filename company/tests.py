@@ -47,7 +47,8 @@ class CompanyAPITest(TestCase):
             username="testuser",
             password="testpassword123",
             email="user@example.com",
-            role=self.user_role
+            role=self.user_role,
+            company=self.user_company
         )
         self.client.force_authenticate(user=self.user)
         self.company = Company.objects.create(
