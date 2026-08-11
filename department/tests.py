@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from company.models import Company
+from role.models import Role
 from .models import Department
 
 User = get_user_model()
@@ -15,10 +16,15 @@ class DepartmentModelTest(TestCase):
             name="TechCorp",
             code="TC001"
         )
+        self.role = Role.objects.create(
+            company=self.company,
+            name="Manager Role"
+        )
         self.user = User.objects.create_user(
             username="manager1",
             email="manager1@example.com",
-            password="Password123!"
+            password="Password123!",
+            role=self.role
         )
         self.department = Department.objects.create(
             company=self.company,
@@ -39,16 +45,21 @@ class DepartmentModelTest(TestCase):
 class DepartmentAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.user = User.objects.create_user(
-            username="testuser",
-            password="testpassword123",
-            email="user@example.com"
-        )
-        self.client.force_authenticate(user=self.user)
         self.company = Company.objects.create(
             name="Acme Inc",
             code="ACME"
         )
+        self.role = Role.objects.create(
+            company=self.company,
+            name="Admin Role"
+        )
+        self.user = User.objects.create_user(
+            username="testuser",
+            password="testpassword123",
+            email="user@example.com",
+            role=self.role
+        )
+        self.client.force_authenticate(user=self.user)
         self.department = Department.objects.create(
             company=self.company,
             name="Human Resources",

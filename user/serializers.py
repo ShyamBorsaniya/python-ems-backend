@@ -1,10 +1,37 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from .models import User
+from role.models import Role
+
+
+class UserSerializer(serializers.ModelSerializer):
+    role_name = serializers.ReadOnlyField(source='role.name')
+
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "first_name",
+            "last_name",
+            "phone",
+            "profile_image",
+            "role",
+            "role_name",
+            "is_active",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at", "role_name"]
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-
+    role = serializers.PrimaryKeyRelatedField(
+        queryset=Role.objects.all(),
+        required=True,
+        allow_null=False
+    )
     password = serializers.CharField(
         write_only=True,
         min_length=8
@@ -18,17 +45,19 @@ class RegisterSerializer(serializers.ModelSerializer):
             "password",
             "first_name",
             "last_name",
+            "role",
         ]
 
     def create(self, validated_data):
+        role = validated_data.pop("role")
         user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
             password=validated_data["password"],
             first_name=validated_data.get("first_name", ""),
             last_name=validated_data.get("last_name", ""),
+            role=role,
         )
-
         return user
 
 

@@ -7,8 +7,8 @@
 	},
 	"item": [
 		{
-			"name": "User Authentication",
-			"description": "Endpoints for User Registration, Login, and JWT Token Refresh.",
+			"name": "User Management & Auth",
+			"description": "Endpoints for User Registration, Login, JWT Token Refresh, User Listing, User Detail, Update, and Soft Delete (Deactivation).",
 			"item": [
 				{
 					"name": "Register User",
@@ -22,7 +22,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}"
+							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"role\": 1\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/user/register/",
@@ -36,7 +36,7 @@
 								""
 							]
 						},
-						"description": "Registers a new user account in the system."
+						"description": "Registers a new user account with a mandatory role ID in the system."
 					},
 					"response": []
 				},
@@ -132,6 +132,195 @@
 							]
 						},
 						"description": "Generates a new access token using a valid refresh token."
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/user/?search=&role=&is_active=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by username, email, first_name, or last_name"
+								},
+								{
+									"key": "role",
+									"value": "",
+									"description": "Filter by role ID"
+								},
+								{
+									"key": "is_active",
+									"value": "true",
+									"description": "Filter by active status (true/false)"
+								}
+							]
+						},
+						"description": "Retrieves a list of all registered users with optional search, role, and active status filters. Requires JWT Bearer Token authorization."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Detail",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/user/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"1",
+								""
+							]
+						},
+						"description": "Retrieves detailed information for a specific user by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User (PUT)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"role\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"1",
+								""
+							]
+						},
+						"description": "Performs a complete update of a user record by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update User Partial (PATCH)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"Johnny\",\n  \"phone\": \"+9876543210\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/user/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"1",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific user fields by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Soft Delete User (DELETE)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/user/1/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"1",
+								""
+							]
+						},
+						"description": "Soft deletes (deactivates) a user by setting is_active=false without permanently deleting the record from the database."
 					},
 					"response": []
 				}

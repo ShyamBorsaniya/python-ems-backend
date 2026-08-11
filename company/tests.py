@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from .models import Company
+from role.models import Role
 
 User = get_user_model()
 
@@ -33,10 +34,20 @@ class CompanyModelTest(TestCase):
 class CompanyAPITest(TestCase):
     def setUp(self):
         self.client = APIClient()
+        self.user_company = Company.objects.create(
+            name="User Corp",
+            code="UC001",
+            email="usercorp@example.com"
+        )
+        self.user_role = Role.objects.create(
+            company=self.user_company,
+            name="Admin Role"
+        )
         self.user = User.objects.create_user(
             username="testuser",
             password="testpassword123",
-            email="user@example.com"
+            email="user@example.com",
+            role=self.user_role
         )
         self.client.force_authenticate(user=self.user)
         self.company = Company.objects.create(
@@ -51,7 +62,7 @@ class CompanyAPITest(TestCase):
         response = self.client.get(self.list_create_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertEqual(len(response.data["data"]), 1)
+        self.assertEqual(len(response.data["data"]), 2)
 
     def test_create_company_success(self):
         payload = {
