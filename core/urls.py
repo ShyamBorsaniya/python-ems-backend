@@ -28,6 +28,7 @@ urlpatterns = [
     path("api/employee/", include("employee.urls")),
     path("api/role/", include("role.urls")),
     path("api/permission/", include("permission.urls")),
+    path("api/project/", include("project.urls")),
 ]
 
 if settings.DEBUG:

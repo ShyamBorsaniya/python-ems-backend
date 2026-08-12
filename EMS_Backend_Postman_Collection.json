@@ -1664,6 +1664,230 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Project Management",
+			"description": "Endpoints to Manage Projects (CRUD operations). Requires JWT Authorization.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "Get All Projects",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/project/?search=&company=&department=&status=&priority=&project_manager=&page=1&page_size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by project name, code, or description (case-insensitive)"
+								},
+								{
+									"key": "company",
+									"value": "",
+									"description": "Filter by company ID"
+								},
+								{
+									"key": "department",
+									"value": "",
+									"description": "Filter by department ID"
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by project status (PLANNED, ACTIVE, ON_HOLD, COMPLETED, CANCELLED)"
+								},
+								{
+									"key": "priority",
+									"value": "",
+									"description": "Filter by project priority (LOW, MEDIUM, HIGH, CRITICAL)"
+								},
+								{
+									"key": "project_manager",
+									"value": "",
+									"description": "Filter by project manager employee ID"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Number of items per page (default: 10)"
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of projects with optional search, company, department, status, priority, project_manager, page, and page_size filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Project",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('project_id', response.data.id);",
+									"    console.log('Created project_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Comprehensive internal enterprise resource management system\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-03-31\",\n  \"status\": \"PLANNED\",\n  \"priority\": \"HIGH\",\n  \"project_manager\": 1,\n  \"budget\": \"75000.00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/project/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								""
+							]
+						},
+						"description": "Creates a new project owned by a company."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Project Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/project/{{project_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"{{project_id}}",
+								""
+							]
+						},
+						"description": "Retrieves full details of a specific project by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal (Phase 1)\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Updated phase 1 scope for enterprise portal\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-04-30\",\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\",\n  \"project_manager\": 1,\n  \"budget\": \"85000.00\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/project/{{project_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"{{project_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of an existing project record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/project/{{project_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"{{project_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific fields of an existing project record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Project",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/project/{{project_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"{{project_id}}",
+								""
+							]
+						},
+						"description": "Deletes a project record by ID."
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
