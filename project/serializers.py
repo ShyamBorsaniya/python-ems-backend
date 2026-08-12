@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, ProjectStatus, ProjectPriority
+from .models import Project, ProjectStatus, ProjectPriority, ProjectMember
 from company.models import Company
 from department.models import Department
 from employee.models import Employee
@@ -70,3 +70,46 @@ class ProjectSerializer(serializers.ModelSerializer):
         if start_date and end_date and start_date > end_date:
             raise serializers.ValidationError({"end_date": "End date must be after or equal to start date."})
         return attrs
+
+
+class ProjectMemberSerializer(serializers.ModelSerializer):
+    project_name = serializers.ReadOnlyField(source='project.name')
+    employee_code = serializers.ReadOnlyField(source='employee.employee_code')
+    employee_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProjectMember
+        fields = [
+            'id',
+            'project',
+            'project_name',
+            'employee',
+            'employee_code',
+            'employee_name',
+            'role',
+            'joined_at',
+            'left_at',
+            'created_at',
+        ]
+        read_only_fields = [
+            'id',
+            'created_at',
+            'project_name',
+            'employee_code',
+            'employee_name',
+        ]
+
+    def get_employee_name(self, obj):
+        if obj.employee:
+            if obj.employee.user and obj.employee.user.get_full_name().strip():
+                return f"{obj.employee.employee_code} - {obj.employee.user.get_full_name()}"
+            return f"{obj.employee.employee_code} - {obj.employee.designation}"
+        return None
+
+    def validate(self, attrs):
+        joined_at = attrs.get('joined_at', self.instance.joined_at if self.instance else None)
+        left_at = attrs.get('left_at', self.instance.left_at if self.instance else None)
+        if joined_at and left_at and joined_at > left_at:
+            raise serializers.ValidationError({"left_at": "Left date must be after or equal to joined date."})
+        return attrs
+

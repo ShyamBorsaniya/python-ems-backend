@@ -1886,8 +1886,213 @@
 						"description": "Deletes a project record by ID."
 					},
 					"response": []
+				},
+				{
+					"name": "Get All Project Members",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/project/members/?project=&employee=&role=&search=&page=1&page_size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"members",
+								""
+							],
+							"query": [
+								{
+									"key": "project",
+									"value": "",
+									"description": "Filter by project ID"
+								},
+								{
+									"key": "employee",
+									"value": "",
+									"description": "Filter by employee ID"
+								},
+								{
+									"key": "role",
+									"value": "",
+									"description": "Filter by role (case-insensitive substring)"
+								},
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search in role, employee code, designation, or user name"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Number of items per page (default: 10)"
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of project members with optional project, employee, role, search, page, and page_size filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Add Project Member",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('project_member_id', response.data.id);",
+									"    console.log('Created project_member_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": null\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/project/members/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"members",
+								""
+							]
+						},
+						"description": "Adds an employee as a member to a project with a specific project role and join date."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Project Member Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"members",
+								"{{project_member_id}}",
+								""
+							]
+						},
+						"description": "Retrieves full details of a specific project member record by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project Member (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Lead Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": \"2027-03-31\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"members",
+								"{{project_member_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of an existing project member record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Project Member Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role\": \"Software Architect\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"members",
+								"{{project_member_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific fields of an existing project member record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Project Member",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"project",
+								"members",
+								"{{project_member_id}}",
+								""
+							]
+						},
+						"description": "Removes a member from a project by ID."
+					},
+					"response": []
 				}
 			]
 		}
 	]
 }
+

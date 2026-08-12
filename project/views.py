@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.core.paginator import Paginator
 
-from .models import Project
-from .serializers import ProjectSerializer
+from .models import Project, ProjectMember
+from .serializers import ProjectSerializer, ProjectMemberSerializer
 
 
 def standard_response(status_code, message, data=None, errors=None):
@@ -163,3 +163,142 @@ class ProjectDetailView(APIView):
             status_code=status.HTTP_200_OK,
             message="Project deleted successfully"
         )
+
+
+class ProjectMemberListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = ProjectMemberSerializer
+    page_size = 10
+
+    def get(self, request):
+        members = ProjectMember.objects.all()
+        project_param = request.query_params.get("project", None)
+        employee_param = request.query_params.get("employee", None)
+        role_param = request.query_params.get("role", None)
+        search_query = request.query_params.get("search", None)
+
+        if project_param:
+            members = members.filter(project_id=project_param)
+
+        if employee_param:
+            members = members.filter(employee_id=employee_param)
+
+        if role_param:
+            members = members.filter(role__icontains=role_param)
+
+        if search_query:
+            members = members.filter(
+                Q(role__icontains=search_query) |
+                Q(employee__employee_code__icontains=search_query) |
+                Q(employee__designation__icontains=search_query) |
+                Q(employee__user__first_name__icontains=search_query) |
+                Q(employee__user__last_name__icontains=search_query)
+            )
+
+        if getattr(request.user, 'company', None):
+            members = members.filter(project__company=request.user.company)
+
+        page_size_param = request.query_params.get("page_size", None)
+        if page_size_param:
+            try:
+                page_size = int(page_size_param)
+            except (ValueError, TypeError):
+                page_size = self.page_size
+        else:
+            page_size = self.page_size
+
+        paginator = Paginator(members, page_size)
+        page_number = request.query_params.get("page", 1)
+        page = paginator.get_page(page_number)
+        serializer = ProjectMemberSerializer(page.object_list, many=True, context={'request': request})
+
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Project members retrieved successfully",
+            data={
+                "results": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": page_size,
+                    "total_items": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "next_page": page.next_page_number() if page.has_next() else None,
+                    "previous_page": page.previous_page_number() if page.has_previous() else None,
+                },
+            }
+        )
+
+    def post(self, request):
+        serializer = ProjectMemberSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_201_CREATED,
+                message="Project member added successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Adding project member failed",
+            errors=serializer.errors
+        )
+
+
+class ProjectMemberDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = ProjectMemberSerializer
+
+    def get_object(self, pk):
+        return get_object_or_404(ProjectMember, pk=pk)
+
+    def get(self, request, pk):
+        member = self.get_object(pk)
+        serializer = ProjectMemberSerializer(member, context={'request': request})
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Project member details retrieved successfully",
+            data=serializer.data
+        )
+
+    def put(self, request, pk):
+        member = self.get_object(pk)
+        serializer = ProjectMemberSerializer(member, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Project member updated successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Project member update failed",
+            errors=serializer.errors
+        )
+
+    def patch(self, request, pk):
+        member = self.get_object(pk)
+        serializer = ProjectMemberSerializer(member, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Project member updated successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Project member update failed",
+            errors=serializer.errors
+        )
+
+    def delete(self, request, pk):
+        member = self.get_object(pk)
+        member.delete()
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Project member removed successfully"
+        )
+
