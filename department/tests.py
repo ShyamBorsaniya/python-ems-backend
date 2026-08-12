@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from company.models import Company
 from role.models import Role
+from employee.models import Employee
 from .models import Department
 
 User = get_user_model()
@@ -191,3 +192,23 @@ class DepartmentAPITest(TestCase):
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Department.objects.filter(pk=self.department.pk).exists())
+
+    def test_department_employee_count(self):
+        import datetime
+        Employee.objects.create(
+            company=self.company,
+            department=self.department,
+            employee_code="EMP_TEST_1",
+            designation="Dev",
+            joining_date=datetime.date(2025, 1, 1)
+        )
+        Employee.objects.create(
+            company=self.company,
+            department=self.department,
+            employee_code="EMP_TEST_2",
+            designation="QA",
+            joining_date=datetime.date(2025, 1, 1)
+        )
+        response = self.client.get(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"]["employee_count"], 2)

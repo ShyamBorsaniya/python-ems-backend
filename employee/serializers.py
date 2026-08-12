@@ -55,9 +55,27 @@ class EmployeeSerializer(serializers.ModelSerializer):
     def validate_employee_code(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError("Employee code is required.")
-        cleaned_value = value.strip().upper()
-        # Check uniqueness during creation or update
+        return value.strip().upper()
+
+    def validate(self, attrs):
         instance = self.instance
-        if Employee.objects.filter(employee_code=cleaned_value).exclude(pk=instance.pk if instance else None).exists():
-            raise serializers.ValidationError("An employee with this employee code already exists.")
-        return cleaned_value
+        company = attrs.get('company') or (instance.company if instance else None)
+        employee_code = attrs.get('employee_code') or (instance.employee_code if instance else None)
+        department = attrs.get('department') or (instance.department if instance else None)
+
+        if company and employee_code:
+            qs = Employee.objects.filter(company=company, employee_code=employee_code)
+            if instance:
+                qs = qs.exclude(pk=instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError({
+                    "employee_code": "An employee with this employee code already exists in this company."
+                })
+
+        if department and company:
+            if department.company_id != company.id:
+                raise serializers.ValidationError({
+                    "department": "The selected department does not belong to the employee's company."
+                })
+
+        return attrs

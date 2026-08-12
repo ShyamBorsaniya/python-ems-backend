@@ -150,3 +150,40 @@ class EmployeeApiTests(APITestCase):
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(Employee.objects.filter(pk=self.employee.pk).exists())
+
+    def test_create_employee_same_code_different_company_success(self):
+        other_company = Company.objects.create(name="Other Corp", code="OTHER01")
+        payload = {
+            "company": other_company.id,
+            "employee_code": "EMP001",  # Same code as self.employee in self.company
+            "designation": "Staff Engineer",
+            "joining_date": "2025-01-15"
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["employee_code"], "EMP001")
+
+    def test_create_employee_same_code_same_company_fails(self):
+        payload = {
+            "company": self.company.id,
+            "employee_code": "EMP001",  # Duplicate in same company
+            "designation": "Staff Engineer",
+            "joining_date": "2025-01-15"
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data["success"])
+
+    def test_create_employee_mismatched_department_company_fails(self):
+        other_company = Company.objects.create(name="Other Corp", code="OTHER02")
+        other_department = Department.objects.create(company=other_company, name="Finance", code="FIN")
+        payload = {
+            "company": self.company.id,
+            "department": other_department.id,
+            "employee_code": "EMP_MISMATCH",
+            "designation": "Accountant",
+            "joining_date": "2025-01-15"
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("department", response.data["errors"])

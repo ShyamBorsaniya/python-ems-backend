@@ -595,7 +595,7 @@
 								{
 									"key": "search",
 									"value": "",
-									"description": "Filter by department name or description (case-insensitive)"
+									"description": "Filter by department name, code, or description (case-insensitive)"
 								},
 								{
 									"key": "company",

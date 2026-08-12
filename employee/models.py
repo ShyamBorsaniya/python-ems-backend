@@ -46,7 +46,7 @@ class Employee(models.Model):
         null=True,
         related_name='employees'
     )
-    employee_code = models.CharField(max_length=50, unique=True)
+    employee_code = models.CharField(max_length=50)
     designation = models.CharField(max_length=100)
     joining_date = models.DateField()
     employment_type = models.CharField(
@@ -76,6 +76,7 @@ class Employee(models.Model):
     class Meta:
         ordering = ['-created_at']
         verbose_name_plural = "Employees"
+        unique_together = ['company', 'employee_code']
 
     def __str__(self):
         return f"{self.employee_code} - {self.designation}"
