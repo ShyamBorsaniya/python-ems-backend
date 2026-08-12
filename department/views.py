@@ -41,7 +41,9 @@ class DepartmentListCreateView(APIView):
                 Q(name__icontains=search_query) | Q(description__icontains=search_query)
             )
 
-        if company_param:
+        if getattr(request.user, 'company', None):
+            departments = departments.filter(company=request.user.company)
+        elif company_param:
             departments = departments.filter(company_id=company_param)
 
         if is_active_param is not None:
