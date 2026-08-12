@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.text import slugify
 from company.models import Company
+from permission.models import Permission
 
 
 class Role(models.Model):
@@ -52,8 +53,31 @@ class Role(models.Model):
                     self.code = self._generate_code()
         super().save(*args, **kwargs)
 
-
     def __str__(self):
         company_name = self.company.name if self.company else "System"
         return f"{self.name} ({company_name})"
+
+
+class RolePermission(models.Model):
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name='role_permissions'
+    )
+    permission = models.ForeignKey(
+        Permission,
+        on_delete=models.CASCADE,
+        related_name='role_permissions'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Role Permissions"
+        unique_together = ('role', 'permission')
+
+    def __str__(self):
+        return f"{self.role.name} - {self.permission.name}"
+
 

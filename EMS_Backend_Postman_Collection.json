@@ -1225,6 +1225,205 @@
 						"description": "Deletes a role record by ID."
 					},
 					"response": []
+				},
+				{
+					"name": "Get All Role Permissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/role/permissions/?search=&role=&permission=&page=1&page_size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"permissions",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by role name, permission name, resource, or action"
+								},
+								{
+									"key": "role",
+									"value": "",
+									"description": "Filter by role ID"
+								},
+								{
+									"key": "permission",
+									"value": "",
+									"description": "Filter by permission ID"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Number of items per page (default: 10)"
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of role permissions with optional search, role, permission, page, and page_size filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Assign Permission to Role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('role_permission_id', response.data.id);",
+									"    console.log('Created role_permission_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role\": 1,\n  \"permission\": 1\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/role/permissions/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"permissions",
+								""
+							]
+						},
+						"description": "Assigns a permission to a role."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Role Permission Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"permissions",
+								"{{role_permission_id}}",
+								""
+							]
+						},
+						"description": "Retrieves details of a specific role permission assignment by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role Permission (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"role\": 1,\n  \"permission\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"permissions",
+								"{{role_permission_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of a role permission assignment."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Role Permission Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"permission\": 2\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"permissions",
+								"{{role_permission_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of a role permission assignment."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Role Permission",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								"permissions",
+								"{{role_permission_id}}",
+								""
+							]
+						},
+						"description": "Deletes a role permission assignment by ID."
+					},
+					"response": []
 				}
 			]
 		},
