@@ -582,7 +582,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/department/?search=&company=&is_active=true",
+							"raw": "{{base_url}}/api/department/?search=&company=&is_active=true&page=1&page_size=10",
 							"host": [
 								"{{base_url}}"
 							],
@@ -606,10 +606,20 @@
 									"key": "is_active",
 									"value": "true",
 									"description": "Filter by active status (true/false)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Number of items per page (default: 10)"
 								}
 							]
 						},
-						"description": "Retrieves a list of all departments with optional search, company, and active status filters."
+						"description": "Retrieves a paginated list of departments with optional search, company, active status, page, and page_size filters."
 					},
 					"response": []
 				},
@@ -640,7 +650,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Engineering\",\n  \"description\": \"Software development and engineering department\",\n  \"manager\": 1,\n  \"is_active\": true\n}"
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Engineering\",\n  \"description\": \"Software development and engineering department\",\n  \"is_active\": true\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/department/",
@@ -690,7 +700,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Product & Engineering\",\n  \"description\": \"Product design and software development department\",\n  \"manager\": 1,\n  \"is_active\": true\n}"
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Product & Engineering\",\n  \"description\": \"Product design and software development department\",\n  \"is_active\": true\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/department/{{department_id}}/",
@@ -781,7 +791,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/employee/?search=&company=&department=&status=&employment_type=&gender=",
+							"raw": "{{base_url}}/api/employee/?search=&company=&department=&status=&employment_type=&gender=&page=1&page_size=10",
 							"host": [
 								"{{base_url}}"
 							],
@@ -820,10 +830,20 @@
 									"key": "gender",
 									"value": "",
 									"description": "Filter by gender (Male, Female, Other)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Number of items per page (default: 10)"
 								}
 							]
 						},
-						"description": "Retrieves a list of all employees with optional search, company, department, status, employment type, and gender filters."
+						"description": "Retrieves a paginated list of employees with optional search, company, department, status, employment type, gender, page, and page_size filters."
 					},
 					"response": []
 				},
@@ -995,7 +1015,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/role/?search=&company=",
+							"raw": "{{base_url}}/api/role/?search=&company=&page=1&page_size=10",
 							"host": [
 								"{{base_url}}"
 							],
@@ -1014,10 +1034,20 @@
 									"key": "company",
 									"value": "",
 									"description": "Filter by company ID"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Number of items per page (default: 10)"
 								}
 							]
 						},
-						"description": "Retrieves a list of all roles with optional search and company filters."
+						"description": "Retrieves a paginated list of roles with optional search, company, page, and page_size filters."
 					},
 					"response": []
 				},

@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.core.paginator import Paginator
 
 from .models import Role
 from .serializers import RoleSerializer
@@ -27,6 +28,7 @@ class RoleListCreateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = RoleSerializer
+    page_size = 10
 
     def get(self, request):
         roles = Role.objects.all()
@@ -38,14 +40,38 @@ class RoleListCreateView(APIView):
                 Q(name__icontains=search_query) | Q(description__icontains=search_query)
             )
 
-        if company_param:
+        if getattr(request.user, 'company', None):
+            roles = roles.filter(company=request.user.company)
+        elif company_param:
             roles = roles.filter(company_id=company_param)
 
-        serializer = RoleSerializer(roles, many=True, context={'request': request})
+        page_size_param = request.query_params.get("page_size", None)
+        if page_size_param:
+            try:
+                page_size = int(page_size_param)
+            except (ValueError, TypeError):
+                page_size = self.page_size
+        else:
+            page_size = self.page_size
+
+        paginator = Paginator(roles, page_size)
+        page_number = request.query_params.get("page", 1)
+        page = paginator.get_page(page_number)
+        serializer = RoleSerializer(page.object_list, many=True, context={'request': request})
         return standard_response(
             status_code=status.HTTP_200_OK,
             message="Roles retrieved successfully",
-            data=serializer.data
+            data={
+                "results": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": page_size,
+                    "total_items": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "next_page": page.next_page_number() if page.has_next() else None,
+                    "previous_page": page.previous_page_number() if page.has_previous() else None,
+                },
+            }
         )
 
     def post(self, request):

@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
+from django.core.paginator import Paginator
 
 from .models import Employee
 from .serializers import EmployeeSerializer
@@ -27,6 +28,7 @@ class EmployeeListCreateView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = EmployeeSerializer
+    page_size = 10
 
     def get(self, request):
         employees = Employee.objects.all()
@@ -60,11 +62,33 @@ class EmployeeListCreateView(APIView):
         if gender_param:
             employees = employees.filter(gender__iexact=gender_param)
 
-        serializer = EmployeeSerializer(employees, many=True, context={'request': request})
+        page_size_param = request.query_params.get("page_size", None)
+        if page_size_param:
+            try:
+                page_size = int(page_size_param)
+            except (ValueError, TypeError):
+                page_size = self.page_size
+        else:
+            page_size = self.page_size
+
+        paginator = Paginator(employees, page_size)
+        page_number = request.query_params.get("page", 1)
+        page = paginator.get_page(page_number)
+        serializer = EmployeeSerializer(page.object_list, many=True, context={'request': request})
         return standard_response(
             status_code=status.HTTP_200_OK,
             message="Employees retrieved successfully",
-            data=serializer.data
+            data={
+                "results": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": page_size,
+                    "total_items": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "next_page": page.next_page_number() if page.has_next() else None,
+                    "previous_page": page.previous_page_number() if page.has_previous() else None,
+                },
+            }
         )
 
     def post(self, request):

@@ -1,0 +1,177 @@
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase
+from user.models import User
+from company.models import Company
+from role.models import Role
+
+
+class RoleApiTests(APITestCase):
+
+    def setUp(self):
+        self.company = Company.objects.create(
+            name="Tech Corp",
+            code="TECH01",
+            email="info@techcorp.com"
+        )
+        self.other_company = Company.objects.create(
+            name="Other Corp",
+            code="OTHER01",
+            email="info@othercorp.com"
+        )
+        self.role = Role.objects.create(
+            company=self.company,
+            name="Admin",
+            description="Administrator role"
+        )
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="user@techcorp.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company
+        )
+        self.client.force_authenticate(user=self.user)
+        self.list_create_url = reverse("role-list-create")
+
+    def test_list_roles_paginated(self):
+        response = self.client.get(self.list_create_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertIn("results", response.data["data"])
+        self.assertIn("pagination", response.data["data"])
+        self.assertEqual(response.data["data"]["pagination"]["page"], 1)
+        self.assertEqual(response.data["data"]["pagination"]["page_size"], 10)
+        self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
+
+    def test_list_roles_pagination_multiple_pages(self):
+        # Create 12 total roles (1 exists + 11 new)
+        for i in range(11):
+            Role.objects.create(
+                company=self.company,
+                name=f"Role {i}",
+                description=f"Description {i}"
+            )
+
+        # Page 1
+        page1 = self.client.get(self.list_create_url)
+        self.assertEqual(page1.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(page1.data["data"]["results"]), 10)
+        self.assertEqual(page1.data["data"]["pagination"]["page"], 1)
+        self.assertEqual(page1.data["data"]["pagination"]["total_items"], 12)
+        self.assertEqual(page1.data["data"]["pagination"]["total_pages"], 2)
+        self.assertEqual(page1.data["data"]["pagination"]["next_page"], 2)
+        self.assertIsNone(page1.data["data"]["pagination"]["previous_page"])
+
+        # Page 2
+        page2 = self.client.get(f"{self.list_create_url}?page=2")
+        self.assertEqual(page2.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(page2.data["data"]["results"]), 2)
+        self.assertEqual(page2.data["data"]["pagination"]["page"], 2)
+        self.assertIsNone(page2.data["data"]["pagination"]["next_page"])
+        self.assertEqual(page2.data["data"]["pagination"]["previous_page"], 1)
+
+    def test_list_roles_custom_page_size(self):
+        for i in range(4):
+            Role.objects.create(
+                company=self.company,
+                name=f"Custom Role {i}"
+            )
+        response = self.client.get(f"{self.list_create_url}?page_size=2")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["data"]["results"]), 2)
+        self.assertEqual(response.data["data"]["pagination"]["page_size"], 2)
+        self.assertEqual(response.data["data"]["pagination"]["total_pages"], 3)
+
+    def test_list_roles_filter_by_search_and_company(self):
+        Role.objects.create(
+            company=self.company,
+            name="Developer",
+            description="Writes code"
+        )
+        Role.objects.create(
+            company=self.other_company,
+            name="External Auditor",
+            description="Audit company"
+        )
+
+        # Search filter (user belongs to self.company, so only self.company roles are included)
+        res_search = self.client.get(f"{self.list_create_url}?search=Developer")
+        self.assertEqual(res_search.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res_search.data["data"]["results"]), 1)
+        self.assertEqual(res_search.data["data"]["results"][0]["name"], "Developer")
+
+        # Company filter (user already scoped to self.company)
+        res_company = self.client.get(f"{self.list_create_url}?company={self.company.id}")
+        self.assertEqual(res_company.status_code, status.HTTP_200_OK)
+        self.assertEqual(res_company.data["data"]["pagination"]["total_items"], 2)
+
+    def test_list_roles_filters_automatically_by_user_company(self):
+        Role.objects.create(
+            company=self.other_company,
+            name="Other Company Role",
+            description="Role in another company"
+        )
+        # self.user belongs to self.company, so other company role should not be listed
+        response = self.client.get(self.list_create_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        role_ids = [r["id"] for r in response.data["data"]["results"]]
+        self.assertIn(self.role.id, role_ids)
+        self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
+
+    def test_list_roles_user_without_company(self):
+        user_no_company = User.objects.create_user(
+            username="nocompanyuser",
+            email="nocompany@example.com",
+            password="Password123!",
+            company=None
+        )
+        Role.objects.create(
+            company=self.other_company,
+            name="Other Company Role"
+        )
+        self.client.force_authenticate(user=user_no_company)
+
+        # Should list all roles from all companies
+        response = self.client.get(self.list_create_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"]["pagination"]["total_items"], 2)
+
+        # Filtering by company_id query param
+        response_param = self.client.get(f"{self.list_create_url}?company={self.other_company.id}")
+        self.assertEqual(response_param.status_code, status.HTTP_200_OK)
+        self.assertEqual(response_param.data["data"]["pagination"]["total_items"], 1)
+        self.assertEqual(response_param.data["data"]["results"][0]["name"], "Other Company Role")
+
+    def test_create_role(self):
+        payload = {
+            "name": "Quality Analyst",
+            "description": "Tests software",
+            "company": self.company.id
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["name"], "Quality Analyst")
+
+    def test_role_detail_update_delete(self):
+        detail_url = reverse("role-detail", kwargs={"pk": self.role.pk})
+
+        # GET detail
+        get_res = self.client.get(detail_url)
+        self.assertEqual(get_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_res.data["data"]["name"], "Admin")
+
+        # PUT update
+        update_payload = {
+            "name": "Super Admin",
+            "description": "Updated description",
+            "company": self.company.id
+        }
+        put_res = self.client.put(detail_url, update_payload, format="json")
+        self.assertEqual(put_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(put_res.data["data"]["name"], "Super Admin")
+
+        # DELETE
+        del_res = self.client.delete(detail_url)
+        self.assertEqual(del_res.status_code, status.HTTP_200_OK)
+        self.assertFalse(Role.objects.filter(pk=self.role.pk).exists())

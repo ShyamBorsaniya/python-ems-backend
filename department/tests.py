@@ -31,14 +31,12 @@ class DepartmentModelTest(TestCase):
             company=self.company,
             name="Engineering",
             description="Software and Hardware engineering",
-            manager=self.user,
             is_active=True
         )
 
     def test_department_creation(self):
         self.assertEqual(self.department.name, "Engineering")
         self.assertEqual(self.department.company, self.company)
-        self.assertEqual(self.department.manager, self.user)
         self.assertTrue(self.department.is_active)
         self.assertEqual(str(self.department), "Engineering (TechCorp)")
 
@@ -74,14 +72,49 @@ class DepartmentAPITest(TestCase):
         response = self.client.get(self.list_create_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertEqual(len(response.data["data"]), 1)
+        self.assertIn("results", response.data["data"])
+        self.assertIn("pagination", response.data["data"])
+        self.assertEqual(len(response.data["data"]["results"]), 1)
+        self.assertEqual(response.data["data"]["pagination"]["page"], 1)
+        self.assertEqual(response.data["data"]["pagination"]["page_size"], 10)
+        self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
+
+    def test_list_departments_pagination_multiple_pages(self):
+        for i in range(11):
+            Department.objects.create(
+                company=self.company,
+                name=f"Department {i}"
+            )
+        page1 = self.client.get(self.list_create_url)
+        self.assertEqual(page1.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(page1.data["data"]["results"]), 10)
+        self.assertEqual(page1.data["data"]["pagination"]["total_items"], 12)
+        self.assertEqual(page1.data["data"]["pagination"]["total_pages"], 2)
+        self.assertEqual(page1.data["data"]["pagination"]["next_page"], 2)
+
+        page2 = self.client.get(f"{self.list_create_url}?page=2")
+        self.assertEqual(page2.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(page2.data["data"]["results"]), 2)
+        self.assertEqual(page2.data["data"]["pagination"]["page"], 2)
+        self.assertIsNone(page2.data["data"]["pagination"]["next_page"])
+
+    def test_list_departments_custom_page_size(self):
+        for i in range(4):
+            Department.objects.create(
+                company=self.company,
+                name=f"Custom Dept {i}"
+            )
+        response = self.client.get(f"{self.list_create_url}?page_size=2")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["data"]["results"]), 2)
+        self.assertEqual(response.data["data"]["pagination"]["page_size"], 2)
+        self.assertEqual(response.data["data"]["pagination"]["total_pages"], 3)
 
     def test_create_department_success(self):
         payload = {
             "company": self.company.id,
             "name": "Finance",
             "description": "Finance and Accounting",
-            "manager": self.user.id,
             "is_active": True
         }
         response = self.client.post(self.list_create_url, payload)
