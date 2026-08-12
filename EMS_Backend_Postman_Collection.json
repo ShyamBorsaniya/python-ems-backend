@@ -1,2098 +1,2136 @@
 {
-	"info": {
-		"_postman_id": "e8a91b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
-		"name": "EMS Backend API Collection",
-		"description": "Complete API Collection for Employee Management System (EMS) Backend built with Django REST Framework.\n\n### Authentication\nThis collection uses JWT Bearer Token authentication. \n1. Register a user or Login with existing credentials.\n2. The **Login** request automatically sets the `access_token` and `refresh_token` environment variables.\n3. Requests in the **Company Management** folder inherit the Bearer Token authentication automatically.",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-	},
-	"item": [
-		{
-			"name": "User Management & Auth",
-			"description": "Endpoints for User Registration, Login, JWT Token Refresh, User Listing, User Detail, Update, Soft Delete (Deactivation), and Restore.",
-			"item": [
-				{
-					"name": "Register User",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"company\": 1,\n  \"role\": 1\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/user/register/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"register",
-								""
-							]
-						},
-						"description": "Registers a new user account in the system (company ID and role ID are optional for superusers)."
-					},
-					"response": []
-				},
-				{
-					"name": "Login User",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.tokens) {",
-									"    pm.environment.set('access_token', response.data.tokens.access);",
-									"    pm.environment.set('refresh_token', response.data.tokens.refresh);",
-									"    console.log('Access and Refresh tokens updated in environment.');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"username\": \"johndoe@example.com\",\n  \"password\": \"Password123!\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/user/login/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"login",
-								""
-							]
-						},
-						"description": "Authenticates user with username or email and returns JWT access & refresh tokens."
-					},
-					"response": []
-				},
-				{
-					"name": "Refresh Token",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.access) {",
-									"    pm.environment.set('access_token', response.access);",
-									"    console.log('Access token refreshed.');",
-									"} else if (response && response.data && response.data.access) {",
-									"    pm.environment.set('access_token', response.data.access);",
-									"    console.log('Access token refreshed.');",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/user/token/refresh/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"token",
-								"refresh",
-								""
-							]
-						},
-						"description": "Generates a new access token using a valid refresh token."
-					},
-					"response": []
-				},
-				{
-					"name": "Get All Users",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/user/?search=&company=&role=&is_active=true&page=1",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by username, email, first_name, or last_name"
-								},
-								{
-									"key": "company",
-									"value": "",
-									"description": "Filter by company ID"
-								},
-								{
-									"key": "role",
-									"value": "",
-									"description": "Filter by role ID"
-								},
-								{
-									"key": "is_active",
-									"value": "true",
-									"description": "Filter by active status (true/false)"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number for paginated results (5 users per page)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of registered users with optional search, company, role, active status, and page filters. Returns 5 users per page. Requires JWT Bearer Token authorization."
-					},
-					"response": []
-				},
-				{
-					"name": "Get User Detail",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/user/1/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"1",
-								""
-							]
-						},
-						"description": "Retrieves detailed information for a specific user by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update User (PUT)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"company\": 1,\n  \"role\": 1\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/user/1/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"1",
-								""
-							]
-						},
-						"description": "Performs a complete update of a user record by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update User Partial (PATCH)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"first_name\": \"Johnny\",\n  \"phone\": \"+9876543210\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/user/1/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"1",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific user fields by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Soft Delete User (DELETE)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/user/1/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"1",
-								""
-							]
-						},
-						"description": "Soft deletes (deactivates) a user by setting is_active=false without permanently deleting the record from the database."
-					},
-					"response": []
-				},
-				{
-					"name": "Restore User (POST)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/user/1/restore/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"user",
-								"1",
-								"restore",
-								""
-							]
-						},
-						"description": "Restores a soft-deleted user by setting is_active=true without changing the user record."
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Company Management",
-			"description": "Endpoints to Manage Companies (CRUD operations). Requires JWT Authorization.",
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{access_token}}",
-						"type": "string"
-					}
-				]
-			},
-			"item": [
-				{
-					"name": "Get All Companies",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/company/?search=&is_active=true",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"company",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by company name or code (case-insensitive)"
-								},
-								{
-									"key": "is_active",
-									"value": "true",
-									"description": "Filter by active status (true/false)"
-								}
-							]
-						},
-						"description": "Retrieves a list of all companies with optional search and active status filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Company",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('company_id', response.data.id);",
-									"    console.log('Created company_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Acme Corporation\",\n  \"code\": \"ACME001\",\n  \"email\": \"contact@acme.com\",\n  \"phone\": \"+1234567890\",\n  \"website\": \"https://acme.com\",\n  \"address\": \"123 Business Way\",\n  \"city\": \"Metropolis\",\n  \"state\": \"NY\",\n  \"country\": \"USA\",\n  \"is_active\": true\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/company/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"company",
-								""
-							]
-						},
-						"description": "Creates a new company record."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Company Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/company/{{company_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"company",
-								"{{company_id}}",
-								""
-							]
-						},
-						"description": "Retrieves the full details of a specific company by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Company (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Acme Global Inc\",\n  \"code\": \"ACME001\",\n  \"email\": \"info@acmeglobal.com\",\n  \"phone\": \"+1987654321\",\n  \"website\": \"https://acmeglobal.com\",\n  \"address\": \"456 Innovation Blvd\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"country\": \"USA\",\n  \"is_active\": true\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/company/{{company_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"company",
-								"{{company_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of an existing company record."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Company Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Acme Global Enterprises\",\n  \"is_active\": true\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/company/{{company_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"company",
-								"{{company_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific fields of an existing company record."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Company",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/company/{{company_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"company",
-								"{{company_id}}",
-								""
-							]
-						},
-						"description": "Deletes a company record by ID."
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Department Management",
-			"description": "Endpoints to Manage Departments (CRUD operations). Requires JWT Authorization.",
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{access_token}}",
-						"type": "string"
-					}
-				]
-			},
-			"item": [
-				{
-					"name": "Get All Departments",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/department/?search=&company=&is_active=true&page=1&page_size=10",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"department",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by department name, code, or description (case-insensitive)"
-								},
-								{
-									"key": "company",
-									"value": "",
-									"description": "Filter by company ID"
-								},
-								{
-									"key": "is_active",
-									"value": "true",
-									"description": "Filter by active status (true/false)"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number (default: 1)"
-								},
-								{
-									"key": "page_size",
-									"value": "10",
-									"description": "Number of items per page (default: 10)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of departments with optional search, company, active status, page, and page_size filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Department",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('department_id', response.data.id);",
-									"    console.log('Created department_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Software development and engineering department\",\n  \"is_active\": true\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/department/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"department",
-								""
-							]
-						},
-						"description": "Creates a new department record."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Department Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/department/{{department_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"department",
-								"{{department_id}}",
-								""
-							]
-						},
-						"description": "Retrieves the full details of a specific department by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Department (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Product & Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Product design and software development department\",\n  \"is_active\": true\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/department/{{department_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"department",
-								"{{department_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of an existing department record."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Department Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Core Engineering\",\n  \"is_active\": true\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/department/{{department_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"department",
-								"{{department_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific fields of an existing department record."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Department",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/department/{{department_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"department",
-								"{{department_id}}",
-								""
-							]
-						},
-						"description": "Deletes a department record by ID."
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Employee Management",
-			"description": "Endpoints to Manage Employees (CRUD operations). Requires JWT Authorization.",
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{access_token}}",
-						"type": "string"
-					}
-				]
-			},
-			"item": [
-				{
-					"name": "Get All Employees",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/employee/?search=&company=&department=&status=&employment_type=&gender=&page=1&page_size=10",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"employee",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by employee code, designation, phone, or emergency contact name"
-								},
-								{
-									"key": "company",
-									"value": "",
-									"description": "Filter by company ID"
-								},
-								{
-									"key": "department",
-									"value": "",
-									"description": "Filter by department ID"
-								},
-								{
-									"key": "status",
-									"value": "",
-									"description": "Filter by status (ACTIVE, INACTIVE, ON_LEAVE, TERMINATED, RESIGNED)"
-								},
-								{
-									"key": "employment_type",
-									"value": "",
-									"description": "Filter by employment type (FULL_TIME, PART_TIME, CONTRACT, INTERN, TEMPORARY)"
-								},
-								{
-									"key": "gender",
-									"value": "",
-									"description": "Filter by gender (Male, Female, Other)"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number (default: 1)"
-								},
-								{
-									"key": "page_size",
-									"value": "10",
-									"description": "Number of items per page (default: 10)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of employees with optional search, company, department, status, employment type, gender, page, and page_size filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Employee",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('employee_id', response.data.id);",
-									"    console.log('Created employee_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Senior Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Tech Street, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/employee/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"employee",
-								""
-							]
-						},
-						"description": "Creates a new employee record."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Employee Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"employee",
-								"{{employee_id}}",
-								""
-							]
-						},
-						"description": "Retrieves the full details of a specific employee by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Employee (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Lead Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"456 Tech Avenue, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"employee",
-								"{{employee_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of an existing employee record."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Employee Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"designation\": \"Principal Software Engineer\",\n  \"status\": \"ACTIVE\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"employee",
-								"{{employee_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific fields of an existing employee record."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Employee",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/employee/{{employee_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"employee",
-								"{{employee_id}}",
-								""
-							]
-						},
-						"description": "Deletes an employee record by ID."
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Role Management",
-			"description": "Endpoints to Manage Roles (CRUD operations). Requires JWT Authorization.",
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{access_token}}",
-						"type": "string"
-					}
-				]
-			},
-			"item": [
-				{
-					"name": "Get All Roles",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/role/?search=&company=&page=1&page_size=10",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by role name or description (case-insensitive)"
-								},
-								{
-									"key": "company",
-									"value": "",
-									"description": "Filter by company ID"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number (default: 1)"
-								},
-								{
-									"key": "page_size",
-									"value": "10",
-									"description": "Number of items per page (default: 10)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of roles with optional search, company, page, and page_size filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Role",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('role_id', response.data.id);",
-									"    console.log('Created role_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Senior Developer\",\n  \"description\": \"Senior Software Developer role responsible for feature implementation and technical leadership\",\n  \"is_system_role\": false\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/role/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								""
-							]
-						},
-						"description": "Creates a new role record. The 'code' field is auto-generated from 'name' (converted to upper snake_case, e.g., 'SENIOR_DEVELOPER'). 'company' is optional for system roles."
-					},
-					"response": []
-				},
-				{
-					"name": "Create System Role",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Super Admin\",\n  \"description\": \"Global system administrator role\",\n  \"is_system_role\": true\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/role/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								""
-							]
-						},
-						"description": "Creates a new system-wide role record without assigning a specific company."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Role Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/role/{{role_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"{{role_id}}",
-								""
-							]
-						},
-						"description": "Retrieves the full details of a specific role by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Role (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Lead Developer\",\n  \"description\": \"Lead Developer role managing team delivery and technical architecture\",\n  \"is_system_role\": false\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/role/{{role_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"{{role_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of an existing role record."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Role Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"Tech Lead\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/role/{{role_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"{{role_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific fields of an existing role record."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Role",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/role/{{role_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"{{role_id}}",
-								""
-							]
-						},
-						"description": "Deletes a role record by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Get All Role Permissions",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/role/permissions/?search=&role=&permission=&page=1&page_size=10",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"permissions",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by role name, permission name, resource, or action"
-								},
-								{
-									"key": "role",
-									"value": "",
-									"description": "Filter by role ID"
-								},
-								{
-									"key": "permission",
-									"value": "",
-									"description": "Filter by permission ID"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number (default: 1)"
-								},
-								{
-									"key": "page_size",
-									"value": "10",
-									"description": "Number of items per page (default: 10)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of role permissions with optional search, role, permission, page, and page_size filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Assign Permission to Role",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('role_permission_id', response.data.id);",
-									"    console.log('Created role_permission_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"role\": 1,\n  \"permission\": 1\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/role/permissions/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"permissions",
-								""
-							]
-						},
-						"description": "Assigns a permission to a role."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Role Permission Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"permissions",
-								"{{role_permission_id}}",
-								""
-							]
-						},
-						"description": "Retrieves details of a specific role permission assignment by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Role Permission (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"role\": 1,\n  \"permission\": 2\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"permissions",
-								"{{role_permission_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of a role permission assignment."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Role Permission Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"permission\": 2\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"permissions",
-								"{{role_permission_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of a role permission assignment."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Role Permission",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"role",
-								"permissions",
-								"{{role_permission_id}}",
-								""
-							]
-						},
-						"description": "Deletes a role permission assignment by ID."
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Permission Management",
-			"description": "Endpoints to Manage Permissions (CRUD operations). Requires JWT Authorization.",
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{access_token}}",
-						"type": "string"
-					}
-				]
-			},
-			"item": [
-				{
-					"name": "Get All Permissions",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/permission/?search=&resource=&action=&page=1&page_size=10",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"permission",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by permission name, resource, action, or description"
-								},
-								{
-									"key": "resource",
-									"value": "",
-									"description": "Filter by resource name (e.g., employee, project)"
-								},
-								{
-									"key": "action",
-									"value": "",
-									"description": "Filter by action (e.g., create, read, update, delete)"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number (default: 1)"
-								},
-								{
-									"key": "page_size",
-									"value": "10",
-									"description": "Number of items per page (default: 10)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of permissions with optional search, resource, action, page, and page_size filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Permission",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('permission_id', response.data.id);",
-									"    console.log('Created permission_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"employee.create\",\n  \"resource\": \"employee\",\n  \"action\": \"create\",\n  \"description\": \"Allows creating new employee records\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/permission/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"permission",
-								""
-							]
-						},
-						"description": "Creates a new permission record with explicit name, resource, action, and description."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Permission (Auto Name)",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"resource\": \"department\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating department details\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/permission/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"permission",
-								""
-							]
-						},
-						"description": "Creates a new permission record omitting 'name', which auto-generates as 'resource.action' (e.g., 'department.update')."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Permission Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"permission",
-								"{{permission_id}}",
-								""
-							]
-						},
-						"description": "Retrieves the full details of a specific permission by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Permission (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"name\": \"employee.update\",\n  \"resource\": \"employee\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating existing employee records\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"permission",
-								"{{permission_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of an existing permission record."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Permission Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"description\": \"Updated description for employee modification permission\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"permission",
-								"{{permission_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific fields of an existing permission record."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Permission",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"permission",
-								"{{permission_id}}",
-								""
-							]
-						},
-						"description": "Deletes a permission record by ID."
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Project Management",
-			"description": "Endpoints to Manage Projects (CRUD operations). Requires JWT Authorization.",
-			"auth": {
-				"type": "bearer",
-				"bearer": [
-					{
-						"key": "token",
-						"value": "{{access_token}}",
-						"type": "string"
-					}
-				]
-			},
-			"item": [
-				{
-					"name": "Get All Projects",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/project/?search=&company=&department=&status=&priority=&project_manager=&page=1&page_size=10",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								""
-							],
-							"query": [
-								{
-									"key": "search",
-									"value": "",
-									"description": "Filter by project name, code, or description (case-insensitive)"
-								},
-								{
-									"key": "company",
-									"value": "",
-									"description": "Filter by company ID"
-								},
-								{
-									"key": "department",
-									"value": "",
-									"description": "Filter by department ID"
-								},
-								{
-									"key": "status",
-									"value": "",
-									"description": "Filter by project status (PLANNED, ACTIVE, ON_HOLD, COMPLETED, CANCELLED)"
-								},
-								{
-									"key": "priority",
-									"value": "",
-									"description": "Filter by project priority (LOW, MEDIUM, HIGH, CRITICAL)"
-								},
-								{
-									"key": "project_manager",
-									"value": "",
-									"description": "Filter by project manager employee ID"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number (default: 1)"
-								},
-								{
-									"key": "page_size",
-									"value": "10",
-									"description": "Number of items per page (default: 10)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of projects with optional search, company, department, status, priority, project_manager, page, and page_size filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Create Project",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('project_id', response.data.id);",
-									"    console.log('Created project_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Comprehensive internal enterprise resource management system\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-03-31\",\n  \"status\": \"PLANNED\",\n  \"priority\": \"HIGH\",\n  \"project_manager\": 1,\n  \"budget\": \"75000.00\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/project/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								""
-							]
-						},
-						"description": "Creates a new project owned by a company."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Project Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/project/{{project_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"{{project_id}}",
-								""
-							]
-						},
-						"description": "Retrieves full details of a specific project by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Project (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal (Phase 1)\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Updated phase 1 scope for enterprise portal\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-04-30\",\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\",\n  \"project_manager\": 1,\n  \"budget\": \"85000.00\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/project/{{project_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"{{project_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of an existing project record."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Project Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/project/{{project_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"{{project_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific fields of an existing project record."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Project",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/project/{{project_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"{{project_id}}",
-								""
-							]
-						},
-						"description": "Deletes a project record by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Get All Project Members",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/project/members/?project=&employee=&role=&search=&page=1&page_size=10",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"members",
-								""
-							],
-							"query": [
-								{
-									"key": "project",
-									"value": "",
-									"description": "Filter by project ID"
-								},
-								{
-									"key": "employee",
-									"value": "",
-									"description": "Filter by employee ID"
-								},
-								{
-									"key": "role",
-									"value": "",
-									"description": "Filter by role (case-insensitive substring)"
-								},
-								{
-									"key": "search",
-									"value": "",
-									"description": "Search in role, employee code, designation, or user name"
-								},
-								{
-									"key": "page",
-									"value": "1",
-									"description": "Page number (default: 1)"
-								},
-								{
-									"key": "page_size",
-									"value": "10",
-									"description": "Number of items per page (default: 10)"
-								}
-							]
-						},
-						"description": "Retrieves a paginated list of project members with optional project, employee, role, search, page, and page_size filters."
-					},
-					"response": []
-				},
-				{
-					"name": "Add Project Member",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var response = pm.response.json();",
-									"if (response && response.data && response.data.id) {",
-									"    pm.environment.set('project_member_id', response.data.id);",
-									"    console.log('Created project_member_id saved to environment:', response.data.id);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": null\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/project/members/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"members",
-								""
-							]
-						},
-						"description": "Adds an employee as a member to a project with a specific project role and join date."
-					},
-					"response": []
-				},
-				{
-					"name": "Get Project Member Detail",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"members",
-								"{{project_member_id}}",
-								""
-							]
-						},
-						"description": "Retrieves full details of a specific project member record by ID."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Project Member (PUT)",
-					"request": {
-						"method": "PUT",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Lead Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": \"2027-03-31\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"members",
-								"{{project_member_id}}",
-								""
-							]
-						},
-						"description": "Performs a full update of an existing project member record."
-					},
-					"response": []
-				},
-				{
-					"name": "Update Project Member Partial (PATCH)",
-					"request": {
-						"method": "PATCH",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"role\": \"Software Architect\"\n}"
-						},
-						"url": {
-							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"members",
-								"{{project_member_id}}",
-								""
-							]
-						},
-						"description": "Performs a partial update of specific fields of an existing project member record."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete Project Member",
-					"request": {
-						"method": "DELETE",
-						"header": [],
-						"url": {
-							"raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-							"host": [
-								"{{base_url}}"
-							],
-							"path": [
-								"api",
-								"project",
-								"members",
-								"{{project_member_id}}",
-								""
-							]
-						},
-						"description": "Removes a member from a project by ID."
-					},
-					"response": []
-				}
-			]
-		}
-	]
+    "info": {
+        "_postman_id": "e8a91b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
+        "name": "EMS Backend API Collection",
+        "description": "Complete API Collection for Employee Management System (EMS) Backend built with Django REST Framework.\n\n### Authentication\nThis collection uses JWT Bearer Token authentication. \n1. Register a user or Login with existing credentials.\n2. The **Login** request automatically sets the `access_token` and `refresh_token` environment variables.\n3. Requests in the **Company Management** folder inherit the Bearer Token authentication automatically.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "User Management & Auth",
+            "description": "Endpoints for User Registration, Login, JWT Token Refresh, User Listing, User Detail, Update, Soft Delete (Deactivation), and Restore.",
+            "item": [
+                {
+                    "name": "Register User",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"company\": 1,\n  \"role\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/register/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "register",
+                                ""
+                            ]
+                        },
+                        "description": "Registers a new user account in the system (company ID and role ID are optional for superusers)."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Login User",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.tokens) {",
+                                    "    pm.environment.set('access_token', response.data.tokens.access);",
+                                    "    pm.environment.set('refresh_token', response.data.tokens.refresh);",
+                                    "    console.log('Access and Refresh tokens updated in environment.');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"johndoe@example.com\",\n  \"password\": \"Password123!\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/login/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "login",
+                                ""
+                            ]
+                        },
+                        "description": "Authenticates user with username or email and returns JWT access & refresh tokens."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Refresh Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.access) {",
+                                    "    pm.environment.set('access_token', response.access);",
+                                    "    console.log('Access token refreshed.');",
+                                    "} else if (response && response.data && response.data.access) {",
+                                    "    pm.environment.set('access_token', response.data.access);",
+                                    "    console.log('Access token refreshed.');",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/token/refresh/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "token",
+                                "refresh",
+                                ""
+                            ]
+                        },
+                        "description": "Generates a new access token using a valid refresh token."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create User (Admin)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"janedoe\",\n  \"email\": \"janedoe@example.com\",\n  \"password\": \"Password123!\",\n  \"first_name\": \"Jane\",\n  \"last_name\": \"Doe\",\n  \"company\": 1,\n  \"role\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new user account via administrative endpoint. Requires JWT Bearer Token authorization."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Users",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/user/?search=&company=&role=&is_active=true&page=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by username, email, first_name, or last_name"
+                                },
+                                {
+                                    "key": "company",
+                                    "value": "",
+                                    "description": "Filter by company ID"
+                                },
+                                {
+                                    "key": "role",
+                                    "value": "",
+                                    "description": "Filter by role ID"
+                                },
+                                {
+                                    "key": "is_active",
+                                    "value": "true",
+                                    "description": "Filter by active status (true/false)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number for paginated results (5 users per page)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of registered users with optional search, company, role, active status, and page filters. Returns 5 users per page. Requires JWT Bearer Token authorization."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get User Detail",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/user/{{user_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "{{user_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves detailed information for a specific user by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update User (PUT)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"company\": 1,\n  \"role\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/{{user_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "{{user_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a complete update of a user record by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update User Partial (PATCH)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"first_name\": \"Johnny\",\n  \"phone\": \"+9876543210\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/user/{{user_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "{{user_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific user fields by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Soft Delete User (DELETE)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/user/{{user_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "{{user_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Soft deletes (deactivates) a user by setting is_active=false without permanently deleting the record from the database."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Restore User (POST)",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/user/{{user_id}}/restore/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "user",
+                                "{{user_id}}",
+                                "restore",
+                                ""
+                            ]
+                        },
+                        "description": "Restores a soft-deleted user by setting is_active=true without changing the user record."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Company Management",
+            "description": "Endpoints to Manage Companies (CRUD operations). Requires JWT Authorization.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{access_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get All Companies",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/company/?search=&is_active=true",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "company",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by company name or code (case-insensitive)"
+                                },
+                                {
+                                    "key": "is_active",
+                                    "value": "true",
+                                    "description": "Filter by active status (true/false)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a list of all companies with optional search and active status filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Company",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('company_id', response.data.id);",
+                                    "    console.log('Created company_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Acme Corporation\",\n  \"code\": \"ACME001\",\n  \"email\": \"contact@acme.com\",\n  \"phone\": \"+1234567890\",\n  \"website\": \"https://acme.com\",\n  \"address\": \"123 Business Way\",\n  \"city\": \"Metropolis\",\n  \"state\": \"NY\",\n  \"country\": \"USA\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/company/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "company",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new company record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Company Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/company/{{company_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "company",
+                                "{{company_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves the full details of a specific company by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Company (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Acme Global Inc\",\n  \"code\": \"ACME001\",\n  \"email\": \"info@acmeglobal.com\",\n  \"phone\": \"+1987654321\",\n  \"website\": \"https://acmeglobal.com\",\n  \"address\": \"456 Innovation Blvd\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"country\": \"USA\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/company/{{company_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "company",
+                                "{{company_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing company record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Company Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Acme Global Enterprises\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/company/{{company_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "company",
+                                "{{company_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing company record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Company",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/company/{{company_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "company",
+                                "{{company_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes a company record by ID."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Department Management",
+            "description": "Endpoints to Manage Departments (CRUD operations). Requires JWT Authorization.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{access_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get All Departments",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/department/?search=&company=&is_active=true&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "department",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by department name, code, or description (case-insensitive)"
+                                },
+                                {
+                                    "key": "company",
+                                    "value": "",
+                                    "description": "Filter by company ID"
+                                },
+                                {
+                                    "key": "is_active",
+                                    "value": "true",
+                                    "description": "Filter by active status (true/false)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of departments with optional search, company, active status, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Department",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('department_id', response.data.id);",
+                                    "    console.log('Created department_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Software development and engineering department\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/department/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "department",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new department record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Department Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/department/{{department_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "department",
+                                "{{department_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves the full details of a specific department by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Department (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Product & Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Product design and software development department\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/department/{{department_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "department",
+                                "{{department_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing department record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Department Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Core Engineering\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/department/{{department_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "department",
+                                "{{department_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing department record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Department",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/department/{{department_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "department",
+                                "{{department_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes a department record by ID."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Employee Management",
+            "description": "Endpoints to Manage Employees (CRUD operations). Requires JWT Authorization.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{access_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get All Employees",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/employee/?search=&company=&department=&status=&employment_type=&gender=&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "employee",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by employee code, designation, phone, or emergency contact name"
+                                },
+                                {
+                                    "key": "company",
+                                    "value": "",
+                                    "description": "Filter by company ID"
+                                },
+                                {
+                                    "key": "department",
+                                    "value": "",
+                                    "description": "Filter by department ID"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "description": "Filter by status (ACTIVE, INACTIVE, ON_LEAVE, TERMINATED, RESIGNED)"
+                                },
+                                {
+                                    "key": "employment_type",
+                                    "value": "",
+                                    "description": "Filter by employment type (FULL_TIME, PART_TIME, CONTRACT, INTERN, TEMPORARY)"
+                                },
+                                {
+                                    "key": "gender",
+                                    "value": "",
+                                    "description": "Filter by gender (Male, Female, Other)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of employees with optional search, company, department, status, employment type, gender, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Employee",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('employee_id', response.data.id);",
+                                    "    console.log('Created employee_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Senior Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Tech Street, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/employee/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "employee",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new employee record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Employee Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "employee",
+                                "{{employee_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves the full details of a specific employee by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Employee (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Lead Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"456 Tech Avenue, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "employee",
+                                "{{employee_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing employee record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Employee Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"designation\": \"Principal Software Engineer\",\n  \"status\": \"ACTIVE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "employee",
+                                "{{employee_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing employee record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Employee",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "employee",
+                                "{{employee_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes an employee record by ID."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Role Management",
+            "description": "Endpoints to Manage Roles (CRUD operations). Requires JWT Authorization.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{access_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get All Roles",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/role/?search=&company=&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by role name or description (case-insensitive)"
+                                },
+                                {
+                                    "key": "company",
+                                    "value": "",
+                                    "description": "Filter by company ID"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of roles with optional search, company, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Role",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('role_id', response.data.id);",
+                                    "    console.log('Created role_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Senior Developer\",\n  \"description\": \"Senior Software Developer role responsible for feature implementation and technical leadership\",\n  \"is_system_role\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/role/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new role record. The 'code' field is auto-generated from 'name' (converted to upper snake_case, e.g., 'SENIOR_DEVELOPER'). 'company' is optional for system roles."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create System Role",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Super Admin\",\n  \"description\": \"Global system administrator role\",\n  \"is_system_role\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/role/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new system-wide role record without assigning a specific company."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Role Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/role/{{role_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "{{role_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves the full details of a specific role by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Role (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Lead Developer\",\n  \"description\": \"Lead Developer role managing team delivery and technical architecture\",\n  \"is_system_role\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/role/{{role_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "{{role_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing role record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Role Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Tech Lead\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/role/{{role_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "{{role_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing role record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Role",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/role/{{role_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "{{role_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes a role record by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Role Permissions",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/role/permissions/?search=&role=&permission=&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "permissions",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by role name, permission name, resource, or action"
+                                },
+                                {
+                                    "key": "role",
+                                    "value": "",
+                                    "description": "Filter by role ID"
+                                },
+                                {
+                                    "key": "permission",
+                                    "value": "",
+                                    "description": "Filter by permission ID"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of role permissions with optional search, role, permission, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Assign Permission to Role",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('role_permission_id', response.data.id);",
+                                    "    console.log('Created role_permission_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"role\": 1,\n  \"permission\": 1\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/role/permissions/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "permissions",
+                                ""
+                            ]
+                        },
+                        "description": "Assigns a permission to a role."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Role Permission Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "permissions",
+                                "{{role_permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves details of a specific role permission assignment by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Role Permission (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"role\": 1,\n  \"permission\": 2\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "permissions",
+                                "{{role_permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of a role permission assignment."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Role Permission Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"permission\": 2\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "permissions",
+                                "{{role_permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of a role permission assignment."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Role Permission",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/role/permissions/{{role_permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "role",
+                                "permissions",
+                                "{{role_permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes a role permission assignment by ID."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Permission Management",
+            "description": "Endpoints to Manage Permissions (CRUD operations). Requires JWT Authorization.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{access_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get All Permissions",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/permission/?search=&resource=&action=&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permission",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by permission name, resource, action, or description"
+                                },
+                                {
+                                    "key": "resource",
+                                    "value": "",
+                                    "description": "Filter by resource name (e.g., employee, project)"
+                                },
+                                {
+                                    "key": "action",
+                                    "value": "",
+                                    "description": "Filter by action (e.g., create, read, update, delete)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of permissions with optional search, resource, action, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Permission",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('permission_id', response.data.id);",
+                                    "    console.log('Created permission_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"employee.create\",\n  \"resource\": \"employee\",\n  \"action\": \"create\",\n  \"description\": \"Allows creating new employee records\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/permission/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permission",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new permission record with explicit name, resource, action, and description."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Permission (Auto Name)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"resource\": \"department\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating department details\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/permission/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permission",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new permission record omitting 'name', which auto-generates as 'resource.action' (e.g., 'department.update')."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Permission Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/permission/{{permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permission",
+                                "{{permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves the full details of a specific permission by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Permission (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"employee.update\",\n  \"resource\": \"employee\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating existing employee records\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/permission/{{permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permission",
+                                "{{permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing permission record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Permission Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"description\": \"Updated description for employee modification permission\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/permission/{{permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permission",
+                                "{{permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing permission record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Permission",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/permission/{{permission_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "permission",
+                                "{{permission_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes a permission record by ID."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Project Management",
+            "description": "Endpoints to Manage Projects (CRUD operations). Requires JWT Authorization.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{access_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get All Projects",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/project/?search=&company=&department=&status=&priority=&project_manager=&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by project name, code, or description (case-insensitive)"
+                                },
+                                {
+                                    "key": "company",
+                                    "value": "",
+                                    "description": "Filter by company ID"
+                                },
+                                {
+                                    "key": "department",
+                                    "value": "",
+                                    "description": "Filter by department ID"
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "description": "Filter by project status (PLANNED, ACTIVE, ON_HOLD, COMPLETED, CANCELLED)"
+                                },
+                                {
+                                    "key": "priority",
+                                    "value": "",
+                                    "description": "Filter by project priority (LOW, MEDIUM, HIGH, CRITICAL)"
+                                },
+                                {
+                                    "key": "project_manager",
+                                    "value": "",
+                                    "description": "Filter by project manager employee ID"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of projects with optional search, company, department, status, priority, project_manager, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Project",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('project_id', response.data.id);",
+                                    "    console.log('Created project_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Comprehensive internal enterprise resource management system\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-03-31\",\n  \"status\": \"PLANNED\",\n  \"priority\": \"HIGH\",\n  \"project_manager\": 1,\n  \"budget\": \"75000.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/project/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new project owned by a company."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Project Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/project/{{project_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "{{project_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves full details of a specific project by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Project (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal (Phase 1)\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Updated phase 1 scope for enterprise portal\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-04-30\",\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\",\n  \"project_manager\": 1,\n  \"budget\": \"85000.00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/project/{{project_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "{{project_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing project record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Project Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/project/{{project_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "{{project_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing project record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Project",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/project/{{project_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "{{project_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes a project record by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get All Project Members",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/project/members/?project=&employee=&role=&search=&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "members",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "project",
+                                    "value": "",
+                                    "description": "Filter by project ID"
+                                },
+                                {
+                                    "key": "employee",
+                                    "value": "",
+                                    "description": "Filter by employee ID"
+                                },
+                                {
+                                    "key": "role",
+                                    "value": "",
+                                    "description": "Filter by role (case-insensitive substring)"
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Search in role, employee code, designation, or user name"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of project members with optional project, employee, role, search, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Add Project Member",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('project_member_id', response.data.id);",
+                                    "    console.log('Created project_member_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": null\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/project/members/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "members",
+                                ""
+                            ]
+                        },
+                        "description": "Adds an employee as a member to a project with a specific project role and join date."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Project Member Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "members",
+                                "{{project_member_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves full details of a specific project member record by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Project Member (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Lead Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": \"2027-03-31\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "members",
+                                "{{project_member_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing project member record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Project Member Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"role\": \"Software Architect\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "members",
+                                "{{project_member_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing project member record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Project Member",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "project",
+                                "members",
+                                "{{project_member_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Removes a member from a project by ID."
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ]
 }
-
