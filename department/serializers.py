@@ -13,6 +13,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
             'company',
             'company_name',
             'name',
+            'code',
             'description',
             'is_active',
             'created_at',
@@ -24,3 +25,8 @@ class DepartmentSerializer(serializers.ModelSerializer):
         if not value or not value.strip():
             raise serializers.ValidationError("Department name is required.")
         return value.strip()
+
+    def validate_code(self, value):
+        if not value or not value.strip():
+            raise serializers.ValidationError("Department code is required.")
+        return value.strip().upper()

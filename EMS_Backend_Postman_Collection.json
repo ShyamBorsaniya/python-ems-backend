@@ -650,7 +650,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Engineering\",\n  \"description\": \"Software development and engineering department\",\n  \"is_active\": true\n}"
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Software development and engineering department\",\n  \"is_active\": true\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/department/",
@@ -700,7 +700,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Product & Engineering\",\n  \"description\": \"Product design and software development department\",\n  \"is_active\": true\n}"
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Product & Engineering\",\n  \"code\": \"ENG\",\n  \"description\": \"Product design and software development department\",\n  \"is_active\": true\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/department/{{department_id}}/",

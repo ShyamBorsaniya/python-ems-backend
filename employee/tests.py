@@ -30,7 +30,8 @@ class EmployeeApiTests(APITestCase):
         )
         self.department = Department.objects.create(
             company=self.company,
-            name="Engineering"
+            name="Engineering",
+            code="ENG"
         )
         self.employee = Employee.objects.create(
             company=self.company,

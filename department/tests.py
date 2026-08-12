@@ -30,15 +30,17 @@ class DepartmentModelTest(TestCase):
         self.department = Department.objects.create(
             company=self.company,
             name="Engineering",
+            code="ENG",
             description="Software and Hardware engineering",
             is_active=True
         )
 
     def test_department_creation(self):
         self.assertEqual(self.department.name, "Engineering")
+        self.assertEqual(self.department.code, "ENG")
         self.assertEqual(self.department.company, self.company)
         self.assertTrue(self.department.is_active)
-        self.assertEqual(str(self.department), "Engineering (TechCorp)")
+        self.assertEqual(str(self.department), "Engineering (ENG)")
 
 
 class DepartmentAPITest(TestCase):
@@ -63,6 +65,7 @@ class DepartmentAPITest(TestCase):
         self.department = Department.objects.create(
             company=self.company,
             name="Human Resources",
+            code="HR",
             description="HR Department"
         )
         self.list_create_url = reverse("department-list-create")
@@ -83,7 +86,8 @@ class DepartmentAPITest(TestCase):
         for i in range(11):
             Department.objects.create(
                 company=self.company,
-                name=f"Department {i}"
+                name=f"Department {i}",
+                code=f"D{i}"
             )
         page1 = self.client.get(self.list_create_url)
         self.assertEqual(page1.status_code, status.HTTP_200_OK)
@@ -102,7 +106,8 @@ class DepartmentAPITest(TestCase):
         for i in range(4):
             Department.objects.create(
                 company=self.company,
-                name=f"Custom Dept {i}"
+                name=f"Custom Dept {i}",
+                code=f"CD{i}"
             )
         response = self.client.get(f"{self.list_create_url}?page_size=2")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -114,6 +119,7 @@ class DepartmentAPITest(TestCase):
         payload = {
             "company": self.company.id,
             "name": "Finance",
+            "code": "FIN",
             "description": "Finance and Accounting",
             "is_active": True
         }
@@ -121,30 +127,65 @@ class DepartmentAPITest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data["success"])
         self.assertEqual(response.data["data"]["name"], "Finance")
+        self.assertEqual(response.data["data"]["code"], "FIN")
+
+    def test_create_department_duplicate_code_same_company_fails(self):
+        payload = {
+            "company": self.company.id,
+            "name": "Another HR",
+            "code": "HR",  # duplicate code in same company
+            "description": "Duplicate code test"
+        }
+        response = self.client.post(self.list_create_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data["success"])
+
+    def test_create_department_same_code_different_company_success(self):
+        other_company = Company.objects.create(name="OtherCorp", code="OTHER")
+        payload = {
+            "company": other_company.id,
+            "name": "Human Resources",
+            "code": "HR",  # same code as self.company, but different company
+            "description": "HR in OtherCorp"
+        }
+        response = self.client.post(self.list_create_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["code"], "HR")
+
+    def test_search_department_by_code(self):
+        response = self.client.get(f"{self.list_create_url}?search=HR")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["data"]["results"]), 1)
+        self.assertEqual(response.data["data"]["results"][0]["code"], "HR")
 
     def test_retrieve_department(self):
         response = self.client.get(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["data"]["name"], "Human Resources")
+        self.assertEqual(response.data["data"]["code"], "HR")
 
     def test_update_department(self):
         payload = {
             "company": self.company.id,
             "name": "People Operations",
+            "code": "PO",
             "description": "Updated HR Dept",
             "is_active": True
         }
         response = self.client.put(self.detail_url, payload)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["data"]["name"], "People Operations")
+        self.assertEqual(response.data["data"]["code"], "PO")
 
     def test_partial_update_department(self):
         payload = {
-            "name": "Global HR"
+            "name": "Global HR",
+            "code": "GHR"
         }
         response = self.client.patch(self.detail_url, payload)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["data"]["name"], "Global HR")
+        self.assertEqual(response.data["data"]["code"], "GHR")
 
     def test_delete_department(self):
         response = self.client.delete(self.detail_url)

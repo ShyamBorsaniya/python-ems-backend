@@ -38,7 +38,7 @@ class DepartmentListCreateView(APIView):
 
         if search_query:
             departments = departments.filter(
-                Q(name__icontains=search_query) | Q(description__icontains=search_query)
+                Q(name__icontains=search_query) | Q(code__icontains=search_query) | Q(description__icontains=search_query)
             )
 
         if getattr(request.user, 'company', None):

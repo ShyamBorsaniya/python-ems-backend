@@ -9,6 +9,7 @@ class Department(models.Model):
         related_name='departments'
     )
     name = models.CharField(max_length=255)
+    code = models.CharField(max_length=50, default='')
     description = models.TextField(blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -17,6 +18,7 @@ class Department(models.Model):
     class Meta:
         ordering = ['-created_at']
         verbose_name_plural = "Departments"
+        unique_together = ['company', 'code']
 
     def __str__(self):
-        return f"{self.name} ({self.company.name})"
+        return f"{self.name} ({self.code})"

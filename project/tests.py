@@ -21,7 +21,8 @@ class ProjectModelTest(TestCase):
         )
         self.department = Department.objects.create(
             company=self.company,
-            name="Engineering"
+            name="Engineering",
+            code="ENG"
         )
         self.project = Project.objects.create(
             company=self.company,
@@ -51,7 +52,8 @@ class ProjectAPITest(TestCase):
         )
         self.department = Department.objects.create(
             company=self.company,
-            name="Product"
+            name="Product",
+            code="PRD"
         )
         self.role = Role.objects.create(
             company=self.company,
@@ -159,7 +161,8 @@ class ProjectMemberAPITest(TestCase):
         )
         self.department = Department.objects.create(
             company=self.company,
-            name="Engineering"
+            name="Engineering",
+            code="ENG"
         )
         self.role = Role.objects.create(
             company=self.company,
