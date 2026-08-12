@@ -152,6 +152,27 @@ class RoleApiTests(APITestCase):
         response = self.client.post(self.list_create_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["data"]["name"], "Quality Analyst")
+        self.assertEqual(response.data["data"]["code"], "QUALITY_ANALYST")
+
+    def test_auto_generate_code_and_uniqueness(self):
+        role1 = Role.objects.create(name="Team Lead", company=self.company)
+        self.assertEqual(role1.code, "TEAM_LEAD")
+
+        role2 = Role.objects.create(name="Team Lead", company=self.other_company)
+        self.assertEqual(role2.code, "TEAM_LEAD_1")
+
+        role3 = Role.objects.create(name="Team Lead", company=self.company)
+        self.assertEqual(role3.code, "TEAM_LEAD_2")
+
+    def test_system_role_creation_without_company(self):
+        system_role = Role.objects.create(
+            name="Super Admin",
+            is_system_role=True,
+            company=None
+        )
+        self.assertEqual(system_role.code, "SUPER_ADMIN")
+        self.assertTrue(system_role.is_system_role)
+        self.assertIsNone(system_role.company)
 
     def test_role_detail_update_delete(self):
         detail_url = reverse("role-detail", kwargs={"pk": self.role.pk})
@@ -160,6 +181,7 @@ class RoleApiTests(APITestCase):
         get_res = self.client.get(detail_url)
         self.assertEqual(get_res.status_code, status.HTTP_200_OK)
         self.assertEqual(get_res.data["data"]["name"], "Admin")
+        self.assertEqual(get_res.data["data"]["code"], "ADMIN")
 
         # PUT update
         update_payload = {
@@ -170,8 +192,17 @@ class RoleApiTests(APITestCase):
         put_res = self.client.put(detail_url, update_payload, format="json")
         self.assertEqual(put_res.status_code, status.HTTP_200_OK)
         self.assertEqual(put_res.data["data"]["name"], "Super Admin")
+        self.assertEqual(put_res.data["data"]["code"], "SUPER_ADMIN")
+
+        # PATCH update name
+        patch_res = self.client.patch(detail_url, {"name": "Chief Executive"}, format="json")
+        self.assertEqual(patch_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(patch_res.data["data"]["name"], "Chief Executive")
+        self.assertEqual(patch_res.data["data"]["code"], "CHIEF_EXECUTIVE")
 
         # DELETE
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(Role.objects.filter(pk=self.role.pk).exists())
+
+

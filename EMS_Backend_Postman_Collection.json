@@ -1078,7 +1078,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Senior Developer\",\n  \"description\": \"Senior Software Developer role responsible for feature implementation and technical leadership\"\n}"
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Senior Developer\",\n  \"description\": \"Senior Software Developer role responsible for feature implementation and technical leadership\",\n  \"is_system_role\": false\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/role/",
@@ -1091,7 +1091,36 @@
 								""
 							]
 						},
-						"description": "Creates a new role record."
+						"description": "Creates a new role record. The 'code' field is auto-generated from 'name' (converted to upper snake_case, e.g., 'SENIOR_DEVELOPER'). 'company' is optional for system roles."
+					},
+					"response": []
+				},
+				{
+					"name": "Create System Role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Super Admin\",\n  \"description\": \"Global system administrator role\",\n  \"is_system_role\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/role/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"role",
+								""
+							]
+						},
+						"description": "Creates a new system-wide role record without assigning a specific company."
 					},
 					"response": []
 				},
@@ -1128,7 +1157,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"company\": 1,\n  \"name\": \"Lead Developer\",\n  \"description\": \"Lead Developer role managing team delivery and technical architecture\"\n}"
+							"raw": "{\n  \"company\": 1,\n  \"name\": \"Lead Developer\",\n  \"description\": \"Lead Developer role managing team delivery and technical architecture\",\n  \"is_system_role\": false\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/api/role/{{role_id}}/",

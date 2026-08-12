@@ -13,13 +13,16 @@ class RoleSerializer(serializers.ModelSerializer):
             'company',
             'company_name',
             'name',
+            'code',
             'description',
+            'is_system_role',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'code', 'created_at', 'updated_at']
 
     def validate_name(self, value):
         if not value or not value.strip():
             raise serializers.ValidationError("Role name is required.")
         return value.strip()
+
