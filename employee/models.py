@@ -27,12 +27,12 @@ class Gender(models.TextChoices):
 
 
 class Employee(models.Model):
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         blank=True,
         null=True,
-        related_name='employees'
+        related_name='employee'
     )
     company = models.ForeignKey(
         Company,

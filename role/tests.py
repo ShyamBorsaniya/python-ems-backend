@@ -201,10 +201,17 @@ class RoleApiTests(APITestCase):
         self.assertEqual(patch_res.data["data"]["name"], "Chief Executive")
         self.assertEqual(patch_res.data["data"]["code"], "CHIEF_EXECUTIVE")
 
-        # DELETE
-        del_res = self.client.delete(detail_url)
-        self.assertEqual(del_res.status_code, status.HTTP_200_OK)
-        self.assertFalse(Role.objects.filter(pk=self.role.pk).exists())
+        # DELETE assigned role (should fail with 400 due to ProtectedError)
+        del_assigned_res = self.client.delete(detail_url)
+        self.assertEqual(del_assigned_res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(del_assigned_res.data["success"])
+
+        # DELETE unassigned role (should succeed with 200 OK)
+        unassigned_role = Role.objects.create(company=self.company, name="Unassigned Role")
+        unassigned_url = reverse("role-detail", kwargs={"pk": unassigned_role.pk})
+        del_unassigned_res = self.client.delete(unassigned_url)
+        self.assertEqual(del_unassigned_res.status_code, status.HTTP_200_OK)
+        self.assertFalse(Role.objects.filter(pk=unassigned_role.pk).exists())
 
 
 class RolePermissionApiTests(APITestCase):

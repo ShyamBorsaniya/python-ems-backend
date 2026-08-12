@@ -7,7 +7,7 @@ class User(AbstractUser):
     profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
     role = models.ForeignKey(
         'role.Role',
-        on_delete=models.SET_NULL,
+        on_delete=models.PROTECT,
         related_name='users',
         blank=True,
         null=True

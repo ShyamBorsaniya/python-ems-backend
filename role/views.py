@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, ProtectedError
 from django.core.paginator import Paginator
 
 from .models import Role, RolePermission
@@ -141,11 +141,17 @@ class RoleDetailView(APIView):
 
     def delete(self, request, pk):
         role = self.get_object(pk)
-        role.delete()
-        return standard_response(
-            status_code=status.HTTP_200_OK,
-            message="Role deleted successfully"
-        )
+        try:
+            role.delete()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Role deleted successfully"
+            )
+        except ProtectedError:
+            return standard_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="Cannot delete role because it is assigned to users."
+            )
 
 
 class RolePermissionListCreateView(APIView):

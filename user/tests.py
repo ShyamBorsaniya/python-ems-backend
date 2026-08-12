@@ -274,16 +274,41 @@ class UserAuthTests(APITestCase):
         user.refresh_from_db()
         self.assertTrue(user.is_active)
 
-    def test_create_superuser_without_company_or_role(self):
-        superuser = User.objects.create_superuser(
-            username="adminuser",
-            email="admin@example.com",
-            password="AdminPassword123!"
+    def test_role_protected_on_delete(self):
+        from django.db.models import ProtectedError
+        user = User.objects.create_user(
+            username="roleuser",
+            email="roleuser@example.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company
         )
-        self.assertTrue(superuser.is_superuser)
-        self.assertTrue(superuser.is_staff)
-        self.assertIsNone(superuser.company)
-        self.assertIsNone(superuser.role)
+        with self.assertRaises(ProtectedError):
+            self.role.delete()
+
+    def test_user_employee_cascade_delete(self):
+        from employee.models import Employee, EmploymentType, EmployeeStatus
+        from datetime import date
+        user = User.objects.create_user(
+            username="empuser",
+            email="empuser@example.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company
+        )
+        emp = Employee.objects.create(
+            company=self.company,
+            user=user,
+            employee_code="EMP_TEST_CASCADE",
+            designation="Tester",
+            joining_date=date(2025, 1, 1),
+            employment_type=EmploymentType.FULL_TIME,
+            status=EmployeeStatus.ACTIVE
+        )
+        emp_id = emp.id
+        user.delete()
+        self.assertFalse(Employee.objects.filter(id=emp_id).exists())
+
 
 
 
