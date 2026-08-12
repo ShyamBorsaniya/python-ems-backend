@@ -3,6 +3,9 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.paginator import Paginator
+from django.shortcuts import get_object_or_404
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import User
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
@@ -35,7 +38,7 @@ class RegisterView(APIView):
                 status_code=status.HTTP_201_CREATED,
                 message="User registered successfully",
                 data={
-                    "user": UserSerializer(user).data
+                    "user": UserSerializer(user, context={'request': request}).data
                 }
             )
 
@@ -65,7 +68,7 @@ class LoginView(APIView):
                         "refresh": str(refresh),
                         "access": str(refresh.access_token),
                     },
-                    "user": UserSerializer(user).data
+                    "user": UserSerializer(user, context={'request': request}).data
                 }
             )
 
@@ -76,14 +79,11 @@ class LoginView(APIView):
         )
 
 
-from django.shortcuts import get_object_or_404
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-
-
 class UserListView(APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
+    page_size = 5
 
     def get(self, request):
         users = User.objects.all().select_related('role', 'company').order_by('-date_joined')
@@ -111,11 +111,40 @@ class UserListView(APIView):
             is_active = is_active_param.lower() in ["true", "1"]
             users = users.filter(is_active=is_active)
 
-        serializer = UserSerializer(users, many=True, context={'request': request})
+        paginator = Paginator(users, self.page_size)
+        page_number = request.query_params.get("page", 1)
+        page = paginator.get_page(page_number)
+        serializer = UserSerializer(page.object_list, many=True, context={'request': request})
         return standard_response(
             status_code=status.HTTP_200_OK,
             message="Users retrieved successfully",
-            data=serializer.data
+            data={
+                "results": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": self.page_size,
+                    "total_items": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "next_page": page.next_page_number() if page.has_next() else None,
+                    "previous_page": page.previous_page_number() if page.has_previous() else None,
+                },
+            }
+        )
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return standard_response(
+                status_code=status.HTTP_201_CREATED,
+                message="User created successfully",
+                data={"user": UserSerializer(user, context={'request': request}).data}
+            )
+
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="User creation failed",
+            errors=serializer.errors
         )
 
 
@@ -175,5 +204,21 @@ class UserDetailView(APIView):
         return standard_response(
             status_code=status.HTTP_200_OK,
             message="User deactivated successfully",
+            data=UserSerializer(user, context={'request': request}).data
+        )
+
+
+class UserRestoreView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserSerializer
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        user.is_active = True
+        user.save()
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="User restored successfully",
             data=UserSerializer(user, context={'request': request}).data
         )

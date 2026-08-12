@@ -8,7 +8,7 @@
 	"item": [
 		{
 			"name": "User Management & Auth",
-			"description": "Endpoints for User Registration, Login, JWT Token Refresh, User Listing, User Detail, Update, and Soft Delete (Deactivation).",
+			"description": "Endpoints for User Registration, Login, JWT Token Refresh, User Listing, User Detail, Update, Soft Delete (Deactivation), and Restore.",
 			"item": [
 				{
 					"name": "Register User",
@@ -151,7 +151,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{base_url}}/api/user/?search=&company=&role=&is_active=true",
+							"raw": "{{base_url}}/api/user/?search=&company=&role=&is_active=true&page=1",
 							"host": [
 								"{{base_url}}"
 							],
@@ -180,10 +180,15 @@
 									"key": "is_active",
 									"value": "true",
 									"description": "Filter by active status (true/false)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number for paginated results (5 users per page)"
 								}
 							]
 						},
-						"description": "Retrieves a list of all registered users with optional search, company, role, and active status filters. Requires JWT Bearer Token authorization."
+						"description": "Retrieves a paginated list of registered users with optional search, company, role, active status, and page filters. Returns 5 users per page. Requires JWT Bearer Token authorization."
 					},
 					"response": []
 				},
@@ -326,6 +331,38 @@
 							]
 						},
 						"description": "Soft deletes (deactivates) a user by setting is_active=false without permanently deleting the record from the database."
+					},
+					"response": []
+				},
+				{
+					"name": "Restore User (POST)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/user/1/restore/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"user",
+								"1",
+								"restore",
+								""
+							]
+						},
+						"description": "Restores a soft-deleted user by setting is_active=true without changing the user record."
 					},
 					"response": []
 				}

@@ -3,11 +3,11 @@ from django.contrib.auth import authenticate
 from .models import User
 from role.models import Role
 from company.models import Company
+from company.serializers import CompanySerializer
 
 
 class UserSerializer(serializers.ModelSerializer):
     role_name = serializers.ReadOnlyField(source='role.name')
-    company_name = serializers.ReadOnlyField(source='company.name')
 
     class Meta:
         model = User
@@ -20,14 +20,21 @@ class UserSerializer(serializers.ModelSerializer):
             "phone",
             "profile_image",
             "company",
-            "company_name",
             "role",
             "role_name",
             "is_active",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "role_name", "company_name"]
+        read_only_fields = ["id", "created_at", "updated_at", "role_name"]
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.company:
+            representation["company"] = CompanySerializer(instance.company, context=self.context).data
+        else:
+            representation["company"] = None
+        return representation
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -99,4 +106,4 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("User account is disabled.")
 
         attrs["user"] = user
-        return attrs
+        return attrs
