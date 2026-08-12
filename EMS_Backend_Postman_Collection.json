@@ -1227,6 +1227,244 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Permission Management",
+			"description": "Endpoints to Manage Permissions (CRUD operations). Requires JWT Authorization.",
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"item": [
+				{
+					"name": "Get All Permissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/permission/?search=&resource=&action=&page=1&page_size=10",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"permission",
+								""
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Filter by permission name, resource, action, or description"
+								},
+								{
+									"key": "resource",
+									"value": "",
+									"description": "Filter by resource name (e.g., employee, project)"
+								},
+								{
+									"key": "action",
+									"value": "",
+									"description": "Filter by action (e.g., create, read, update, delete)"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "page_size",
+									"value": "10",
+									"description": "Number of items per page (default: 10)"
+								}
+							]
+						},
+						"description": "Retrieves a paginated list of permissions with optional search, resource, action, page, and page_size filters."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Permission",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var response = pm.response.json();",
+									"if (response && response.data && response.data.id) {",
+									"    pm.environment.set('permission_id', response.data.id);",
+									"    console.log('Created permission_id saved to environment:', response.data.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"employee.create\",\n  \"resource\": \"employee\",\n  \"action\": \"create\",\n  \"description\": \"Allows creating new employee records\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/permission/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"permission",
+								""
+							]
+						},
+						"description": "Creates a new permission record with explicit name, resource, action, and description."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Permission (Auto Name)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"resource\": \"department\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating department details\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/permission/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"permission",
+								""
+							]
+						},
+						"description": "Creates a new permission record omitting 'name', which auto-generates as 'resource.action' (e.g., 'department.update')."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Permission Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"permission",
+								"{{permission_id}}",
+								""
+							]
+						},
+						"description": "Retrieves the full details of a specific permission by ID."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Permission (PUT)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"employee.update\",\n  \"resource\": \"employee\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating existing employee records\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"permission",
+								"{{permission_id}}",
+								""
+							]
+						},
+						"description": "Performs a full update of an existing permission record."
+					},
+					"response": []
+				},
+				{
+					"name": "Update Permission Partial (PATCH)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"Updated description for employee modification permission\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"permission",
+								"{{permission_id}}",
+								""
+							]
+						},
+						"description": "Performs a partial update of specific fields of an existing permission record."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Permission",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/permission/{{permission_id}}/",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"permission",
+								"{{permission_id}}",
+								""
+							]
+						},
+						"description": "Deletes a permission record by ID."
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
