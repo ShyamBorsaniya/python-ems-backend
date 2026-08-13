@@ -61,9 +61,28 @@ class EmployeeSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         instance = self.instance
-        company = attrs.get('company') or (instance.company if instance else None)
-        employee_code = attrs.get('employee_code') or (instance.employee_code if instance else None)
-        department = attrs.get('department') or (instance.department if instance else None)
+        
+        company = attrs.get('company')
+        if company is None and instance:
+            company = instance.company
+
+        if 'department' in attrs:
+            department = attrs['department']
+        elif instance:
+            department = instance.department
+        else:
+            department = None
+
+        if 'designation' in attrs:
+            designation = attrs['designation']
+        elif instance:
+            designation = instance.designation
+        else:
+            designation = None
+
+        employee_code = attrs.get('employee_code')
+        if employee_code is None and instance:
+            employee_code = instance.employee_code
 
         if company and employee_code:
             qs = Employee.objects.filter(company=company, employee_code=employee_code)
@@ -80,7 +99,6 @@ class EmployeeSerializer(serializers.ModelSerializer):
                     "department": "The selected department does not belong to the employee's company."
                 })
 
-        designation = attrs.get('designation') or (instance.designation if instance else None)
         if designation and company:
             if designation.company_id != company.id:
                 raise serializers.ValidationError({

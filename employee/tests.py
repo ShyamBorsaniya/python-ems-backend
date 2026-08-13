@@ -233,3 +233,43 @@ class EmployeeApiTests(APITestCase):
         response = self.client.post(self.list_create_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("designation", response.data["errors"])
+
+    def test_update_employee_mismatched_department_fails(self):
+        detail_url = reverse("employee-detail", kwargs={"pk": self.employee.pk})
+        other_company = Company.objects.create(name="Other Corp", code="OTHER04")
+        other_department = Department.objects.create(company=other_company, name="HR", code="HR")
+        
+        payload = {
+            "department": other_department.id
+        }
+        response = self.client.patch(detail_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("department", response.data["errors"])
+
+    def test_update_employee_mismatched_designation_fails(self):
+        detail_url = reverse("employee-detail", kwargs={"pk": self.employee.pk})
+        other_company = Company.objects.create(name="Other Corp", code="OTHER05")
+        other_designation = Designation.objects.create(company=other_company, name="Architect", code="ARCH")
+        
+        payload = {
+            "designation": other_designation.id
+        }
+        response = self.client.patch(detail_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("designation", response.data["errors"])
+
+    def test_update_employee_change_company_and_clear_dept_designation_success(self):
+        detail_url = reverse("employee-detail", kwargs={"pk": self.employee.pk})
+        other_company = Company.objects.create(name="Other Corp", code="OTHER06")
+        
+        payload = {
+            "company": other_company.id,
+            "department": None,
+            "designation": None
+        }
+        response = self.client.patch(detail_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"]["company"], other_company.id)
+        self.assertIsNone(response.data["data"]["department"])
+        self.assertIsNone(response.data["data"]["designation"])
+
