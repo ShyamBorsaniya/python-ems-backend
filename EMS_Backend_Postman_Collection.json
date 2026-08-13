@@ -2254,6 +2254,215 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Designation Management",
+            "description": "Endpoints to Manage Designations (CRUD operations). Requires JWT Authorization.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{access_token}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Get All Designations",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/designation/?search=&company=&is_active=true&page=1&page_size=10",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "designation",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by designation name, code, or description (case-insensitive)"
+                                },
+                                {
+                                    "key": "company",
+                                    "value": "",
+                                    "description": "Filter by company ID"
+                                },
+                                {
+                                    "key": "is_active",
+                                    "value": "true",
+                                    "description": "Filter by active status (true/false)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number (default: 1)"
+                                },
+                                {
+                                    "key": "page_size",
+                                    "value": "10",
+                                    "description": "Number of items per page (default: 10)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of designations with optional search, company, active status, page, and page_size filters."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Create Designation",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "var response = pm.response.json();",
+                                    "if (response && response.data && response.data.id) {",
+                                    "    pm.environment.set('designation_id', response.data.id);",
+                                    "    console.log('Created designation_id saved to environment:', response.data.id);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Software Engineer\",\n  \"code\": \"SWE\",\n  \"description\": \"Responsible for building and maintaining applications\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/designation/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "designation",
+                                ""
+                            ]
+                        },
+                        "description": "Creates a new designation record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Designation Detail",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/designation/{{designation_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "designation",
+                                "{{designation_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Retrieves the full details of a specific designation by ID."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Designation (PUT)",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Senior Software Engineer\",\n  \"code\": \"SSE\",\n  \"description\": \"Responsible for leading application development and design\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/designation/{{designation_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "designation",
+                                "{{designation_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a full update of an existing designation record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Designation Partial (PATCH)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Lead Software Engineer\",\n  \"is_active\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/designation/{{designation_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "designation",
+                                "{{designation_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Performs a partial update of specific fields of an existing designation record."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Delete Designation",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/designation/{{designation_id}}/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "designation",
+                                "{{designation_id}}",
+                                ""
+                            ]
+                        },
+                        "description": "Deletes a designation record by ID."
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

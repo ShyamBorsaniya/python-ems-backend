@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "user",
     "company",
     "department",
+    "designation",
     "employee",
     "role",
     "permission",

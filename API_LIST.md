@@ -17,7 +17,8 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 | 7 | **Permission** | `permission` | `/api/permission/` | 6 |
 | 8 | **Project** | `project` | `/api/project/` | 6 |
 | 9 | **ProjectMember** | `project` | `/api/project/members/` | 6 |
-| **Total** | **9 Models** | | | **58 Endpoints** |
+| 10 | **Designation** | `designation` | `/api/designation/` | 6 |
+| **Total** | **10 Models** | | | **64 Endpoints** |
 
 ---
 
@@ -31,6 +32,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 7. [Permission Model APIs](#7-permission-model-apis)
 8. [Project Model APIs](#8-project-model-apis)
 9. [ProjectMember Model APIs](#9-projectmember-model-apis)
+10. [Designation Model APIs](#10-designation-model-apis)
 
 ---
 
@@ -648,4 +650,66 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **URL Path**: `/api/project/members/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Removes an employee assignment from a project by deleting the project member record.
+* **Response Status**: `200 OK`
+
+---
+
+## 10. Designation Model APIs
+
+**App**: `designation`  
+**Model**: `Designation` (`designation/models.py`)  
+**Base Path**: `/api/designation/`  
+**Description**: Manages job designations within companies, including name, code, description, and status.
+
+### Endpoints List
+
+#### 10.1. List Designations
+* **Method**: `GET`
+* **URL Path**: `/api/designation/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves a paginated list of designations with optional filtering and searching.
+* **Query Parameters**:
+  * `search` *(optional)*: Filter by designation name, code, or description (case-insensitive).
+  * `company` *(optional)*: Filter by Company ID (superusers can filter by any company, tenants are limited to their own company).
+  * `is_active` *(optional)*: Filter by active status (`true`/`false` or `1`/`0`).
+  * `page` *(optional)*: Page number (default: 1).
+  * `page_size` *(optional)*: Page size (default: 10).
+* **Response Status**: `200 OK`
+
+#### 10.2. Create Designation
+* **Method**: `POST`
+* **URL Path**: `/api/designation/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Creates a new designation record.
+* **Request Body**: `company` (ID), `name`, `code`, `description` *(optional)*, `is_active` *(optional, default: true)*
+* **Response Status**: `201 Created`
+
+#### 10.3. Get Designation Details
+* **Method**: `GET`
+* **URL Path**: `/api/designation/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves detailed information for a specific designation by ID.
+* **Response Status**: `200 OK`
+
+#### 10.4. Update Designation (Full - PUT)
+* **Method**: `PUT`
+* **URL Path**: `/api/designation/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Fully updates all attributes of a designation record.
+* **Request Body**: `company`, `name`, `code`, `description`, `is_active`
+* **Response Status**: `200 OK`
+
+#### 10.5. Update Designation (Partial - PATCH)
+* **Method**: `PATCH`
+* **URL Path**: `/api/designation/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Partially updates selected fields of a designation record.
+* **Request Body**: Any subset of `Designation` fields.
+* **Response Status**: `200 OK`
+
+#### 10.6. Delete Designation
+* **Method**: `DELETE`
+* **URL Path**: `/api/designation/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Permanently deletes a designation record by ID.
 * **Response Status**: `200 OK`
