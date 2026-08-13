@@ -34,6 +34,12 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
+            if user.status == UserStatus.PENDING:
+                return standard_response(
+                    status_code=status.HTTP_201_CREATED,
+                    message="you are registered successfull please wait untill admin can approve"
+                )
+
             return standard_response(
                 status_code=status.HTTP_201_CREATED,
                 message="User registered successfully",

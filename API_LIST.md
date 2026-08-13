@@ -47,7 +47,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Method**: `POST`
 * **URL Path**: `/api/user/register/`
 * **Authentication**: Public (`AllowAny`)
-* **Description**: Registers a new user in the system with username, email, password, profile image, role, and company.
+* **Description**: Registers a new user in the system with username, email, password, profile image, role, and company. If the registered user status is `pending`, user data is omitted from the response and the message `"you are registered successfull please wait untill admin can approve"` is returned.
 * **Request Body**: `username`, `email`, `password`, `first_name`, `last_name`, `phone`, `role`, `company`, `profile_image` (file)
 * **Response Status**: `201 Created`
 
@@ -351,7 +351,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 #### 5.1. List Roles
 * **Method**: `GET`
 * **URL Path**: `/api/role/`
-* **Authentication**: Required (`IsAuthenticated`)
+* **Authentication**: Public (`AllowAny`)
 * **Description**: Retrieves a paginated list of system and company-specific roles.
 * **Query Parameters**:
   * `search` *(optional)*: Filter by role name or description.

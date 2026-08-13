@@ -44,6 +44,16 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["user"]["company"]["id"], self.company.id)
         self.assertEqual(response.data["data"]["user"]["company"]["name"], "Test Corp")
 
+    def test_user_registration_pending_status(self):
+        data = self.user_data.copy()
+        data["status"] = UserStatus.PENDING
+        response = self.client.post(self.register_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["status_code"], 201)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["message"], "you are registered successfull please wait untill admin can approve")
+        self.assertNotIn("data", response.data)
+
     def test_user_registration_without_role_fails(self):
         data = self.user_data.copy()
         del data["role"]

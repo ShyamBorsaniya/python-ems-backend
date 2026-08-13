@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 from django.db.models import Q, ProtectedError
@@ -25,10 +25,14 @@ def standard_response(status_code, message, data=None, errors=None):
 
 
 class RoleListCreateView(APIView):
-    permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = RoleSerializer
     page_size = 10
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     def get(self, request):
         roles = Role.objects.all()
@@ -40,7 +44,7 @@ class RoleListCreateView(APIView):
                 Q(name__icontains=search_query) | Q(description__icontains=search_query)
             )
 
-        if getattr(request.user, 'company', None):
+        if request.user.is_authenticated and getattr(request.user, 'company', None):
             roles = roles.filter(company=request.user.company)
         elif company_param:
             roles = roles.filter(company_id=company_param)

@@ -1,6 +1,6 @@
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.test import APITestCase, APIClient
 from user.models import User
 from company.models import Company
 from role.models import Role, RolePermission
@@ -34,6 +34,34 @@ class RoleApiTests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
         self.list_create_url = reverse("role-list-create")
+
+    def test_list_roles_unauthenticated(self):
+        unauthenticated_client = APIClient()
+        response = unauthenticated_client.get(self.list_create_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
+
+    def test_list_roles_unauthenticated_filter_by_company(self):
+        unauthenticated_client = APIClient()
+        Role.objects.create(
+            company=self.other_company,
+            name="Other Company Role"
+        )
+        response = unauthenticated_client.get(f"{self.list_create_url}?company={self.other_company.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
+        self.assertEqual(response.data["data"]["results"][0]["name"], "Other Company Role")
+
+    def test_create_role_unauthenticated(self):
+        unauthenticated_client = APIClient()
+        payload = {
+            "name": "Quality Analyst",
+            "description": "Tests software",
+            "company": self.company.id
+        }
+        response = unauthenticated_client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_roles_paginated(self):
         response = self.client.get(self.list_create_url)
