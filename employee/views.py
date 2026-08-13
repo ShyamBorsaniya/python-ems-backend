@@ -42,7 +42,7 @@ class EmployeeListCreateView(APIView):
         if search_query:
             employees = employees.filter(
                 Q(employee_code__icontains=search_query) |
-                Q(designation__icontains=search_query) |
+                Q(designation__name__icontains=search_query) |
                 Q(phone__icontains=search_query) |
                 Q(emergency_contact_name__icontains=search_query)
             )

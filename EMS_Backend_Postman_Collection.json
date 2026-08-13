@@ -1033,7 +1033,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Senior Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Tech Street, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
+                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": {{designation_id}},\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Tech Street, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/employee/",
@@ -1083,7 +1083,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": \"Lead Software Engineer\",\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"456 Tech Avenue, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
+                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": {{designation_id}},\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"456 Tech Avenue, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/employee/{{employee_id}}/",
@@ -1113,7 +1113,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"designation\": \"Principal Software Engineer\",\n  \"status\": \"ACTIVE\"\n}"
+                            "raw": "{\n  \"designation\": {{designation_id}},\n  \"status\": \"ACTIVE\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/employee/{{employee_id}}/",

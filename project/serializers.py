@@ -47,7 +47,8 @@ class ProjectSerializer(serializers.ModelSerializer):
         if obj.project_manager:
             if obj.project_manager.user and obj.project_manager.user.get_full_name().strip():
                 return f"{obj.project_manager.employee_code} - {obj.project_manager.user.get_full_name()}"
-            return f"{obj.project_manager.employee_code} - {obj.project_manager.designation}"
+            designation_name = obj.project_manager.designation.name if obj.project_manager.designation else "No Designation"
+            return f"{obj.project_manager.employee_code} - {designation_name}"
         return None
 
     def validate_name(self, value):
@@ -103,7 +104,8 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
         if obj.employee:
             if obj.employee.user and obj.employee.user.get_full_name().strip():
                 return f"{obj.employee.employee_code} - {obj.employee.user.get_full_name()}"
-            return f"{obj.employee.employee_code} - {obj.employee.designation}"
+            designation_name = obj.employee.designation.name if obj.employee.designation else "No Designation"
+            return f"{obj.employee.employee_code} - {designation_name}"
         return None
 
     def validate(self, attrs):

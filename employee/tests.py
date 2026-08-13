@@ -6,6 +6,7 @@ from user.models import User
 from company.models import Company
 from department.models import Department
 from role.models import Role
+from designation.models import Designation
 from .models import Employee, EmploymentType, EmployeeStatus
 
 
@@ -33,12 +34,17 @@ class EmployeeApiTests(APITestCase):
             name="Engineering",
             code="ENG"
         )
+        self.designation = Designation.objects.create(
+            company=self.company,
+            name="Senior Software Engineer",
+            code="SSE"
+        )
         self.employee = Employee.objects.create(
             company=self.company,
             department=self.department,
             user=self.user,
             employee_code="EMP001",
-            designation="Senior Software Engineer",
+            designation=self.designation,
             joining_date=date(2025, 1, 15),
             employment_type=EmploymentType.FULL_TIME,
             status=EmployeeStatus.ACTIVE
@@ -64,7 +70,7 @@ class EmployeeApiTests(APITestCase):
                 company=self.company,
                 department=self.department,
                 employee_code=f"EMP{i+2:03d}",
-                designation=f"Developer {i}",
+                designation=self.designation,
                 joining_date=date(2025, 1, 15)
             )
 
@@ -87,7 +93,7 @@ class EmployeeApiTests(APITestCase):
             Employee.objects.create(
                 company=self.company,
                 employee_code=f"EMPCUST{i:03d}",
-                designation=f"Role {i}",
+                designation=self.designation,
                 joining_date=date(2025, 1, 15)
             )
 
@@ -98,10 +104,15 @@ class EmployeeApiTests(APITestCase):
         self.assertEqual(response.data["data"]["pagination"]["total_pages"], 3)
 
     def test_list_employees_filtering_with_pagination(self):
+        contractor_designation = Designation.objects.create(
+            company=self.company,
+            name="Contractor",
+            code="CONT"
+        )
         Employee.objects.create(
             company=self.company,
             employee_code="EMP_CONTRACT",
-            designation="Contractor",
+            designation=contractor_designation,
             joining_date=date(2025, 2, 1),
             employment_type=EmploymentType.CONTRACT,
             status=EmployeeStatus.INACTIVE
@@ -117,11 +128,16 @@ class EmployeeApiTests(APITestCase):
         self.assertEqual(res_status.data["data"]["pagination"]["total_items"], 1)
 
     def test_create_employee(self):
+        qa_designation = Designation.objects.create(
+            company=self.company,
+            name="QA Engineer",
+            code="QA"
+        )
         payload = {
             "company": self.company.id,
             "department": self.department.id,
             "employee_code": "EMPNEW01",
-            "designation": "QA Engineer",
+            "designation": qa_designation.id,
             "joining_date": "2025-03-01",
             "employment_type": "FULL_TIME",
             "status": "ACTIVE"
@@ -129,6 +145,8 @@ class EmployeeApiTests(APITestCase):
         response = self.client.post(self.list_create_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["data"]["employee_code"], "EMPNEW01")
+        self.assertEqual(response.data["data"]["designation"], qa_designation.id)
+        self.assertEqual(response.data["data"]["designation_name"], "QA Engineer")
 
     def test_retrieve_update_delete_employee(self):
         detail_url = reverse("employee-detail", kwargs={"pk": self.employee.pk})
@@ -137,15 +155,21 @@ class EmployeeApiTests(APITestCase):
         self.assertEqual(get_res.status_code, status.HTTP_200_OK)
         self.assertEqual(get_res.data["data"]["employee_code"], "EMP001")
 
+        lead_designation = Designation.objects.create(
+            company=self.company,
+            name="Lead Engineer",
+            code="LEAD"
+        )
         update_payload = {
             "company": self.company.id,
             "employee_code": "EMP001",
-            "designation": "Lead Engineer",
+            "designation": lead_designation.id,
             "joining_date": "2025-01-15"
         }
         put_res = self.client.put(detail_url, update_payload, format="json")
         self.assertEqual(put_res.status_code, status.HTTP_200_OK)
-        self.assertEqual(put_res.data["data"]["designation"], "Lead Engineer")
+        self.assertEqual(put_res.data["data"]["designation"], lead_designation.id)
+        self.assertEqual(put_res.data["data"]["designation_name"], "Lead Engineer")
 
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
@@ -153,10 +177,15 @@ class EmployeeApiTests(APITestCase):
 
     def test_create_employee_same_code_different_company_success(self):
         other_company = Company.objects.create(name="Other Corp", code="OTHER01")
+        other_designation = Designation.objects.create(
+            company=other_company,
+            name="Staff Engineer",
+            code="STAFF"
+        )
         payload = {
             "company": other_company.id,
-            "employee_code": "EMP001",  # Same code as self.employee in self.company
-            "designation": "Staff Engineer",
+            "employee_code": "EMP001",
+            "designation": other_designation.id,
             "joining_date": "2025-01-15"
         }
         response = self.client.post(self.list_create_url, payload, format="json")
@@ -166,8 +195,8 @@ class EmployeeApiTests(APITestCase):
     def test_create_employee_same_code_same_company_fails(self):
         payload = {
             "company": self.company.id,
-            "employee_code": "EMP001",  # Duplicate in same company
-            "designation": "Staff Engineer",
+            "employee_code": "EMP001",
+            "designation": self.designation.id,
             "joining_date": "2025-01-15"
         }
         response = self.client.post(self.list_create_url, payload, format="json")
@@ -181,9 +210,26 @@ class EmployeeApiTests(APITestCase):
             "company": self.company.id,
             "department": other_department.id,
             "employee_code": "EMP_MISMATCH",
-            "designation": "Accountant",
+            "designation": self.designation.id,
             "joining_date": "2025-01-15"
         }
         response = self.client.post(self.list_create_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("department", response.data["errors"])
+
+    def test_create_employee_mismatched_designation_company_fails(self):
+        other_company = Company.objects.create(name="Other Corp", code="OTHER03")
+        other_designation = Designation.objects.create(
+            company=other_company,
+            name="Manager",
+            code="MGR"
+        )
+        payload = {
+            "company": self.company.id,
+            "employee_code": "EMP_MGR_MISMATCH",
+            "designation": other_designation.id,
+            "joining_date": "2025-01-15"
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("designation", response.data["errors"])

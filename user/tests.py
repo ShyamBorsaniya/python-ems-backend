@@ -367,7 +367,7 @@ class UserAuthTests(APITestCase):
             company=self.company,
             user=user,
             employee_code="EMP_TEST_CASCADE",
-            designation="Tester",
+            designation=None,
             joining_date=date(2025, 1, 1),
             employment_type=EmploymentType.FULL_TIME,
             status=EmployeeStatus.ACTIVE

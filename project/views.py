@@ -191,7 +191,7 @@ class ProjectMemberListCreateView(APIView):
             members = members.filter(
                 Q(role__icontains=search_query) |
                 Q(employee__employee_code__icontains=search_query) |
-                Q(employee__designation__icontains=search_query) |
+                Q(employee__designation__name__icontains=search_query) |
                 Q(employee__user__first_name__icontains=search_query) |
                 Q(employee__user__last_name__icontains=search_query)
             )

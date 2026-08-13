@@ -10,6 +10,7 @@ User = get_user_model()
 class EmployeeSerializer(serializers.ModelSerializer):
     company_name = serializers.ReadOnlyField(source='company.name')
     department_name = serializers.SerializerMethodField()
+    designation_name = serializers.ReadOnlyField(source='designation.name', allow_null=True)
     user_username = serializers.SerializerMethodField()
     user_full_name = serializers.SerializerMethodField()
 
@@ -26,6 +27,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'department_name',
             'employee_code',
             'designation',
+            'designation_name',
             'joining_date',
             'employment_type',
             'date_of_birth',
@@ -38,7 +40,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at', 'company_name', 'department_name', 'user_username', 'user_full_name']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'company_name', 'department_name', 'designation_name', 'user_username', 'user_full_name']
 
     def get_department_name(self, obj):
         return obj.department.name if obj.department else None
@@ -76,6 +78,13 @@ class EmployeeSerializer(serializers.ModelSerializer):
             if department.company_id != company.id:
                 raise serializers.ValidationError({
                     "department": "The selected department does not belong to the employee's company."
+                })
+
+        designation = attrs.get('designation') or (instance.designation if instance else None)
+        if designation and company:
+            if designation.company_id != company.id:
+                raise serializers.ValidationError({
+                    "designation": "The selected designation does not belong to the employee's company."
                 })
 
         return attrs

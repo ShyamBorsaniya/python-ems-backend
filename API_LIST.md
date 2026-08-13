@@ -281,7 +281,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 **App**: `employee`  
 **Model**: `Employee` (`employee/models.py`)  
 **Base Path**: `/api/employee/`  
-**Description**: Manages employee profiles linked to User accounts, Company, and Department entities with employment type, status, and personal details.
+**Description**: Manages employee profiles linked to User accounts, Company, Department, and Designation entities with employment type, status, and personal details.
 
 ### Endpoints List
 
@@ -291,7 +291,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Retrieves a paginated list of employees with multi-criteria filtering and text search.
 * **Query Parameters**:
-  * `search` *(optional)*: Filter by employee code, designation, phone, or emergency contact name.
+  * `search` *(optional)*: Filter by employee code, designation name, phone, or emergency contact name.
   * `company` *(optional)*: Filter by Company ID.
   * `department` *(optional)*: Filter by Department ID.
   * `status` *(optional)*: Filter by EmployeeStatus (`ACTIVE`, `INACTIVE`, `ON_LEAVE`, `TERMINATED`, `RESIGNED`).
@@ -305,9 +305,9 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Method**: `POST`
 * **URL Path**: `/api/employee/`
 * **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Creates a new employee profile associated with a user, company, and department.
-* **Request Body**: `user`, `company`, `department`, `employee_code`, `designation`, `joining_date`, `employment_type`, `date_of_birth`, `gender`, `phone`, `address`, `emergency_contact_name`, `emergency_contact_phone`, `status`
-* **Response Status**: `201 Created`
+* **Description**: Creates a new employee profile associated with a user, company, department, and designation.
+* **Request Body**: `user` *(optional)*, `company` (ID), `department` *(optional, ID)*, `employee_code`, `designation` *(optional, Designation ID)*, `joining_date`, `employment_type`, `date_of_birth` *(optional)*, `gender` *(optional)*, `phone` *(optional)*, `address` *(optional)*, `emergency_contact_name` *(optional)*, `emergency_contact_phone` *(optional)*, `status`
+* **Response Status**: `201 Created` (returns the full employee profile including read-only fields like `designation_name`)
 
 #### 4.3. Get Employee Details
 * **Method**: `GET`
@@ -321,7 +321,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **URL Path**: `/api/employee/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Fully updates all attributes of an employee profile.
-* **Request Body**: Full set of `Employee` fields.
+* **Request Body**: Full set of `Employee` fields (with `designation` as a Designation ID).
 * **Response Status**: `200 OK`
 
 #### 4.5. Update Employee (Partial - PATCH)
@@ -329,7 +329,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **URL Path**: `/api/employee/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Partially updates selected fields of an employee profile.
-* **Request Body**: Any subset of `Employee` fields.
+* **Request Body**: Any subset of `Employee` fields (with `designation` as a Designation ID).
 * **Response Status**: `200 OK`
 
 #### 4.6. Delete Employee

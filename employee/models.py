@@ -47,7 +47,13 @@ class Employee(models.Model):
         related_name='employees'
     )
     employee_code = models.CharField(max_length=50)
-    designation = models.CharField(max_length=100)
+    designation = models.ForeignKey(
+        'designation.Designation',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='employees'
+    )
     joining_date = models.DateField()
     employment_type = models.CharField(
         max_length=20,
@@ -79,4 +85,5 @@ class Employee(models.Model):
         unique_together = ['company', 'employee_code']
 
     def __str__(self):
-        return f"{self.employee_code} - {self.designation}"
+        designation_name = self.designation.name if self.designation else "No Designation"
+        return f"{self.employee_code} - {designation_name}"

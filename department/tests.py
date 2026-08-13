@@ -199,14 +199,14 @@ class DepartmentAPITest(TestCase):
             company=self.company,
             department=self.department,
             employee_code="EMP_TEST_1",
-            designation="Dev",
+            designation=None,
             joining_date=datetime.date(2025, 1, 1)
         )
         Employee.objects.create(
             company=self.company,
             department=self.department,
             employee_code="EMP_TEST_2",
-            designation="QA",
+            designation=None,
             joining_date=datetime.date(2025, 1, 1)
         )
         response = self.client.get(self.detail_url)

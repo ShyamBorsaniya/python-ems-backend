@@ -73,7 +73,7 @@ class ProjectAPITest(TestCase):
             company=self.company,
             department=self.department,
             employee_code="EMP-001",
-            designation="Project Manager",
+            designation=None,
             joining_date="2024-01-01",
             employment_type=EmploymentType.FULL_TIME,
             status=EmployeeStatus.ACTIVE
@@ -182,7 +182,7 @@ class ProjectMemberAPITest(TestCase):
             company=self.company,
             department=self.department,
             employee_code="EMP-002",
-            designation="Backend Developer",
+            designation=None,
             joining_date="2024-01-01",
             employment_type=EmploymentType.FULL_TIME,
             status=EmployeeStatus.ACTIVE
