@@ -7,7 +7,7 @@ from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
-from .models import User
+from .models import User, UserStatus
 from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
 
 
@@ -90,6 +90,7 @@ class UserListView(APIView):
         search_query = request.query_params.get("search", None)
         role_param = request.query_params.get("role", None)
         company_param = request.query_params.get("company", None)
+        status_param = request.query_params.get("status", None)
         is_active_param = request.query_params.get("is_active", None)
 
         if search_query:
@@ -106,6 +107,9 @@ class UserListView(APIView):
 
         if company_param:
             users = users.filter(company_id=company_param)
+
+        if status_param:
+            users = users.filter(status=status_param)
 
         if is_active_param is not None:
             is_active = is_active_param.lower() in ["true", "1"]
@@ -220,5 +224,83 @@ class UserRestoreView(APIView):
         return standard_response(
             status_code=status.HTTP_200_OK,
             message="User restored successfully",
+            data=UserSerializer(user, context={'request': request}).data
+        )
+
+
+class PendingUserListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserSerializer
+    page_size = 5
+
+    def get(self, request):
+        users = User.objects.filter(status=UserStatus.PENDING).select_related('role', 'company').order_by('-date_joined')
+        if request.user.company:
+            users = users.filter(company=request.user.company)
+
+        company_param = request.query_params.get("company", None)
+        if company_param:
+            users = users.filter(company_id=company_param)
+
+        search_query = request.query_params.get("search", None)
+        if search_query:
+            from django.db.models import Q
+            users = users.filter(
+                Q(username__icontains=search_query) |
+                Q(email__icontains=search_query) |
+                Q(first_name__icontains=search_query) |
+                Q(last_name__icontains=search_query)
+            )
+
+        paginator = Paginator(users, self.page_size)
+        page_number = request.query_params.get("page", 1)
+        page = paginator.get_page(page_number)
+        serializer = UserSerializer(page.object_list, many=True, context={'request': request})
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Pending users retrieved successfully",
+            data={
+                "results": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": self.page_size,
+                    "total_items": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "next_page": page.next_page_number() if page.has_next() else None,
+                    "previous_page": page.previous_page_number() if page.has_previous() else None,
+                },
+            }
+        )
+
+
+class UserApproveView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserSerializer
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        user.status = UserStatus.APPROVED
+        user.save()
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="User approved successfully",
+            data=UserSerializer(user, context={'request': request}).data
+        )
+
+
+class UserRejectView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserSerializer
+
+    def post(self, request, pk):
+        user = get_object_or_404(User, pk=pk)
+        user.status = UserStatus.REJECTED
+        user.save()
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="User rejected successfully",
             data=UserSerializer(user, context={'request': request}).data
         )

@@ -55,9 +55,9 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Method**: `POST`
 * **URL Path**: `/api/user/login/`
 * **Authentication**: Public (`AllowAny`)
-* **Description**: Authenticates user credentials (username or email and password) and returns JWT access token, refresh token, and user profile data.
+* **Description**: Authenticates user credentials (username or email and password) and returns JWT access token, refresh token, and user profile data. If the user account is inactive (`is_active=False`), returns a 400 Bad Request error with `"your account has been inactivated please contact to admin"`. If status is pending, returns `"your account has been waiting to approval"`. If status is rejected, returns `"your account has been terminited, contact to admin for ferther query"`.
 * **Request Body**: `username` (or `email`), `password`
-* **Response Status**: `200 OK`
+* **Response Status**: `200 OK` (or `400 Bad Request` if invalid, inactive, pending, or rejected)
 
 #### 1.3. Token Refresh
 * **Method**: `POST`
@@ -77,6 +77,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
   * `role` *(optional)*: Filter by Role ID.
   * `company` *(optional)*: Filter by Company ID.
   * `is_active` *(optional)*: Filter by active status (`true`/`false` or `1`/`0`).
+  * `status` *(optional)*: Filter by user status (`pending`, `approved`, or `rejected`).
   * `page` *(optional)*: Page number for pagination (default: 1, page size: 5).
 * **Response Status**: `200 OK`
 
@@ -125,6 +126,31 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Description**: Reactivates a soft-deleted user account by setting `is_active = True`.
 * **Response Status**: `200 OK`
 
+#### 1.11. Pending Company Users
+* **Method**: `GET`
+* **URL Path**: `/api/user/pending/` (or `/api/users/pending/`)
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves a paginated list of users whose account status is `pending`. Automatically filters by the logged-in user's company (`company = request.user.company`).
+* **Query Parameters**:
+  * `search` *(optional)*: Filter by username, email, first name, or last name.
+  * `company` *(optional)*: Filter by specific Company ID.
+  * `page` *(optional)*: Page number for pagination.
+* **Response Status**: `200 OK`
+
+#### 1.12. Approve User
+* **Method**: `POST`
+* **URL Path**: `/api/user/{id}/approve/` (or `/api/users/{id}/approve/`)
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Approves a pending user account by setting `status = 'approved'`.
+* **Response Status**: `200 OK`
+
+#### 1.13. Reject User
+* **Method**: `POST`
+* **URL Path**: `/api/user/{id}/reject/` (or `/api/users/{id}/reject/`)
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Rejects a user account by setting `status = 'rejected'`.
+* **Response Status**: `200 OK`
+
 ---
 
 ## 2. Company Model APIs
@@ -139,7 +165,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 #### 2.1. List Companies
 * **Method**: `GET`
 * **URL Path**: `/api/company/`
-* **Authentication**: Required (`IsAuthenticated`)
+* **Authentication**: Public (`AllowAny`)
 * **Description**: Retrieves all companies with optional keyword search and active status filter.
 * **Query Parameters**:
   * `search` *(optional)*: Filter by company name or unique code.

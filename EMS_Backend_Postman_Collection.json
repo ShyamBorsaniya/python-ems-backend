@@ -2,7 +2,7 @@
     "info": {
         "_postman_id": "e8a91b2c-3d4e-5f6a-7b8c-9d0e1f2a3b4c",
         "name": "EMS Backend API Collection",
-        "description": "Complete API Collection for Employee Management System (EMS) Backend built with Django REST Framework.\n\n### Authentication\nThis collection uses JWT Bearer Token authentication. \n1. Register a user or Login with existing credentials.\n2. The **Login** request automatically sets the `access_token` and `refresh_token` environment variables.\n3. Requests in the **Company Management** folder inherit the Bearer Token authentication automatically.",
+        "description": "Complete API Collection for Employee Management System (EMS) Backend built with Django REST Framework.\n\n### Authentication\nThis collection uses JWT Bearer Token authentication. \n1. Register a user or Login with existing credentials.\n2. The **Login** request automatically sets the `access_token` and `refresh_token` environment variables.\n3. Requests in the **Company Management** folder inherit Bearer Token authentication (except **Get All Companies**, which is a public endpoint with no auth requirement).",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
@@ -190,7 +190,7 @@
                         "method": "GET",
                         "header": [],
                         "url": {
-                            "raw": "{{base_url}}/api/user/?search=&company=&role=&is_active=true&page=1",
+                            "raw": "{{base_url}}/api/user/?search=&company=&role=&status=&is_active=true&page=1",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -216,6 +216,11 @@
                                     "description": "Filter by role ID"
                                 },
                                 {
+                                    "key": "status",
+                                    "value": "",
+                                    "description": "Filter by user status (pending/approved/rejected)"
+                                },
+                                {
                                     "key": "is_active",
                                     "value": "true",
                                     "description": "Filter by active status (true/false)"
@@ -227,7 +232,7 @@
                                 }
                             ]
                         },
-                        "description": "Retrieves a paginated list of registered users with optional search, company, role, active status, and page filters. Returns 5 users per page. Requires JWT Bearer Token authorization."
+                        "description": "Retrieves a paginated list of registered users with optional search, company, role, status, active status, and page filters. Returns 5 users per page. Requires JWT Bearer Token authorization."
                     },
                     "response": []
                 },
@@ -284,7 +289,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"company\": 1,\n  \"role\": 1\n}"
+                            "raw": "{\n  \"username\": \"johndoe\",\n  \"email\": \"johndoe@example.com\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"phone\": \"+1234567890\",\n  \"status\": \"approved\",\n  \"company\": 1,\n  \"role\": 1\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/user/{{user_id}}/",
@@ -324,7 +329,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"first_name\": \"Johnny\",\n  \"phone\": \"+9876543210\"\n}"
+                            "raw": "{\n  \"first_name\": \"Johnny\",\n  \"status\": \"approved\",\n  \"phone\": \"+9876543210\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/user/{{user_id}}/",
@@ -404,12 +409,124 @@
                         "description": "Restores a soft-deleted user by setting is_active=true without changing the user record."
                     },
                     "response": []
+                },
+                {
+                    "name": "Get Pending Company Users",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/users/pending/?search=&company=&page=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "pending",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "description": "Filter by username, email, first_name, or last_name"
+                                },
+                                {
+                                    "key": "company",
+                                    "value": "",
+                                    "description": "Filter by company ID"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1",
+                                    "description": "Page number for paginated results (5 users per page)"
+                                }
+                            ]
+                        },
+                        "description": "Retrieves a paginated list of pending users belonging to the logged in user's company."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Approve User",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/users/{{user_id}}/approve/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{user_id}}",
+                                "approve",
+                                ""
+                            ]
+                        },
+                        "description": "Approves a pending user account by updating status to approved."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Reject User",
+                    "request": {
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{access_token}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [],
+                        "url": {
+                            "raw": "{{base_url}}/api/users/{{user_id}}/reject/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "users",
+                                "{{user_id}}",
+                                "reject",
+                                ""
+                            ]
+                        },
+                        "description": "Rejects a user account by updating status to rejected."
+                    },
+                    "response": []
                 }
             ]
         },
         {
             "name": "Company Management",
-            "description": "Endpoints to Manage Companies (CRUD operations). Requires JWT Authorization.",
+            "description": "Endpoints to Manage Companies (CRUD operations). Get All Companies is public; creation, detail, update, and deletion require JWT Authorization.",
             "auth": {
                 "type": "bearer",
                 "bearer": [
@@ -424,6 +541,9 @@
                 {
                     "name": "Get All Companies",
                     "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
                         "method": "GET",
                         "header": [],
                         "url": {
@@ -449,7 +569,7 @@
                                 }
                             ]
                         },
-                        "description": "Retrieves a list of all companies with optional search and active status filters."
+                        "description": "Retrieves a list of all companies with optional search and active status filters. Public endpoint (No authentication required)."
                     },
                     "response": []
                 },

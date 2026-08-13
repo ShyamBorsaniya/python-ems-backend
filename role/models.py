@@ -15,7 +15,7 @@ class Role(models.Model):
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
-    is_system_role = models.BooleanField(default=False)
+    is_system_role = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

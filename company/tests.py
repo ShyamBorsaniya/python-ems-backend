@@ -65,6 +65,22 @@ class CompanyAPITest(TestCase):
         self.assertTrue(response.data["success"])
         self.assertEqual(len(response.data["data"]), 2)
 
+    def test_list_companies_unauthenticated(self):
+        unauthenticated_client = APIClient()
+        response = unauthenticated_client.get(self.list_create_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(len(response.data["data"]), 2)
+
+    def test_create_company_unauthenticated(self):
+        unauthenticated_client = APIClient()
+        payload = {
+            "name": "Unauthorized Inc",
+            "code": "UNAUTH01",
+        }
+        response = unauthenticated_client.post(self.list_create_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
     def test_create_company_success(self):
         payload = {
             "name": "Global Logistics",

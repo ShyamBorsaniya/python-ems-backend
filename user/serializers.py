@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from .models import User
+from .models import User, UserStatus
 from role.models import Role
 from company.models import Company
 from company.serializers import CompanySerializer
@@ -22,6 +22,7 @@ class UserSerializer(serializers.ModelSerializer):
             "company",
             "role",
             "role_name",
+            "status",
             "is_active",
             "created_at",
             "updated_at",
@@ -63,20 +64,28 @@ class RegisterSerializer(serializers.ModelSerializer):
             "last_name",
             "company",
             "role",
+            "status",
         ]
+        extra_kwargs = {
+            "status": {"required": False}
+        }
 
     def create(self, validated_data):
         role = validated_data.pop("role")
         company = validated_data.pop("company")
-        user = User.objects.create_user(
-            username=validated_data["username"],
-            email=validated_data["email"],
-            password=validated_data["password"],
-            first_name=validated_data.get("first_name", ""),
-            last_name=validated_data.get("last_name", ""),
-            role=role,
-            company=company,
-        )
+        status_val = validated_data.pop("status", None)
+        create_kwargs = {
+            "username": validated_data["username"],
+            "email": validated_data["email"],
+            "password": validated_data["password"],
+            "first_name": validated_data.get("first_name", ""),
+            "last_name": validated_data.get("last_name", ""),
+            "role": role,
+            "company": company,
+        }
+        if status_val:
+            create_kwargs["status"] = status_val
+        user = User.objects.create_user(**create_kwargs)
         return user
 
 
@@ -91,19 +100,27 @@ class LoginSerializer(serializers.Serializer):
         user = None
         if "@" in username_or_email:
             try:
-                user_obj = User.objects.get(email=username_or_email)
-                user = authenticate(username=user_obj.username, password=password)
+                user = User.objects.get(email=username_or_email)
             except User.DoesNotExist:
                 pass
 
         if not user:
-            user = authenticate(username=username_or_email, password=password)
+            try:
+                user = User.objects.get(username=username_or_email)
+            except User.DoesNotExist:
+                pass
 
-        if not user:
+        if not user or not user.check_password(password):
             raise serializers.ValidationError("Invalid credentials.")
 
         if not user.is_active:
-            raise serializers.ValidationError("User account is disabled.")
+            raise serializers.ValidationError("your account has been inactivated please contact to admin")
+
+        if user.status == UserStatus.PENDING:
+            raise serializers.ValidationError("your account has been waiting to approval")
+
+        if user.status == UserStatus.REJECTED:
+            raise serializers.ValidationError("your account has been terminited, contact to admin for ferther query")
 
         attrs["user"] = user
         return attrs
