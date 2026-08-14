@@ -40,7 +40,6 @@ class CompanyAPITest(TestCase):
             email="usercorp@example.com"
         )
         self.user_role = Role.objects.create(
-            company=self.user_company,
             name="Admin Role"
         )
         self.user = User.objects.create_user(

@@ -1,26 +1,20 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
 from .models import Role, RolePermission
-from company.models import Company
 
 
 class RoleSerializer(serializers.ModelSerializer):
-    company_name = serializers.ReadOnlyField(source='company.name')
 
     class Meta:
         model = Role
         fields = [
             'id',
-            'company',
-            'company_name',
             'name',
-            'code',
-            'description',
-            'is_system_role',
+            'display_name',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'code', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
 
     def validate_name(self, value):
         if not value or not value.strip():

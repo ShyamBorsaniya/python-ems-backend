@@ -37,17 +37,11 @@ class RoleListCreateView(APIView):
     def get(self, request):
         roles = Role.objects.all()
         search_query = request.query_params.get("search", None)
-        company_param = request.query_params.get("company", None)
 
         if search_query:
             roles = roles.filter(
-                Q(name__icontains=search_query) | Q(description__icontains=search_query)
+                Q(name__icontains=search_query) | Q(display_name__icontains=search_query)
             )
-
-        if request.user.is_authenticated and getattr(request.user, 'company', None):
-            roles = roles.filter(company=request.user.company)
-        elif company_param:
-            roles = roles.filter(company_id=company_param)
 
         page_size_param = request.query_params.get("page_size", None)
         if page_size_param:
@@ -184,10 +178,7 @@ class RolePermissionListCreateView(APIView):
                 Q(permission__action__icontains=search_query)
             )
 
-        if getattr(request.user, 'company', None):
-            role_permissions = role_permissions.filter(
-                Q(role__company=request.user.company) | Q(role__company__isnull=True)
-            )
+
 
         page_size_param = request.query_params.get("page_size", None)
         if page_size_param:

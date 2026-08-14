@@ -931,230 +931,6 @@
             ]
         },
         {
-            "name": "Employee Management",
-            "description": "Endpoints to Manage Employees (CRUD operations). Requires JWT Authorization.",
-            "auth": {
-                "type": "bearer",
-                "bearer": [
-                    {
-                        "key": "token",
-                        "value": "{{access_token}}",
-                        "type": "string"
-                    }
-                ]
-            },
-            "item": [
-                {
-                    "name": "Get All Employees",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/employee/?search=&company=&department=&status=&employment_type=&gender=&page=1&page_size=10",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "employee",
-                                ""
-                            ],
-                            "query": [
-                                {
-                                    "key": "search",
-                                    "value": "",
-                                    "description": "Filter by employee code, designation, phone, or emergency contact name"
-                                },
-                                {
-                                    "key": "company",
-                                    "value": "",
-                                    "description": "Filter by company ID"
-                                },
-                                {
-                                    "key": "department",
-                                    "value": "",
-                                    "description": "Filter by department ID"
-                                },
-                                {
-                                    "key": "status",
-                                    "value": "",
-                                    "description": "Filter by status (ACTIVE, INACTIVE, ON_LEAVE, TERMINATED, RESIGNED)"
-                                },
-                                {
-                                    "key": "employment_type",
-                                    "value": "",
-                                    "description": "Filter by employment type (FULL_TIME, PART_TIME, CONTRACT, INTERN, TEMPORARY)"
-                                },
-                                {
-                                    "key": "gender",
-                                    "value": "",
-                                    "description": "Filter by gender (Male, Female, Other)"
-                                },
-                                {
-                                    "key": "page",
-                                    "value": "1",
-                                    "description": "Page number (default: 1)"
-                                },
-                                {
-                                    "key": "page_size",
-                                    "value": "10",
-                                    "description": "Number of items per page (default: 10)"
-                                }
-                            ]
-                        },
-                        "description": "Retrieves a paginated list of employees with optional search, company, department, status, employment type, gender, page, and page_size filters."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Create Employee",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "var response = pm.response.json();",
-                                    "if (response && response.data && response.data.id) {",
-                                    "    pm.environment.set('employee_id', response.data.id);",
-                                    "    console.log('Created employee_id saved to environment:', response.data.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": {{designation_id}},\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Tech Street, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/employee/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "employee",
-                                ""
-                            ]
-                        },
-                        "description": "Creates a new employee record."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Employee Detail",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "employee",
-                                "{{employee_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Retrieves the full details of a specific employee by ID."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Update Employee (PUT)",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"user\": 1,\n  \"company\": 1,\n  \"department\": 1,\n  \"employee_code\": \"EMP-001\",\n  \"designation\": {{designation_id}},\n  \"joining_date\": \"2024-01-15\",\n  \"employment_type\": \"FULL_TIME\",\n  \"date_of_birth\": \"1995-06-20\",\n  \"gender\": \"Male\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"456 Tech Avenue, Silicon Valley, CA\",\n  \"emergency_contact_name\": \"Jane Doe\",\n  \"emergency_contact_phone\": \"+1987654321\",\n  \"status\": \"ACTIVE\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "employee",
-                                "{{employee_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Performs a full update of an existing employee record."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Update Employee Partial (PATCH)",
-                    "request": {
-                        "method": "PATCH",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"designation\": {{designation_id}},\n  \"status\": \"ACTIVE\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "employee",
-                                "{{employee_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Performs a partial update of specific fields of an existing employee record."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Delete Employee",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/employee/{{employee_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "employee",
-                                "{{employee_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Deletes an employee record by ID."
-                    },
-                    "response": []
-                }
-            ]
-        },
-        {
             "name": "Role Management",
             "description": "Endpoints to Manage Roles (CRUD operations). Requires JWT Authorization.",
             "auth": {
@@ -1240,7 +1016,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Senior Developer\",\n  \"description\": \"Senior Software Developer role responsible for feature implementation and technical leadership\",\n  \"is_system_role\": false\n}"
+                            "raw": "{\n  \"name\": \"Senior Developer\",\n  \"display_name\": \"Senior Developer\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/role/",
@@ -1269,7 +1045,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"name\": \"Super Admin\",\n  \"description\": \"Global system administrator role\",\n  \"is_system_role\": true\n}"
+                            "raw": "{\n  \"name\": \"Super Admin\",\n  \"display_name\": \"Super Admin\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/role/",
@@ -1319,7 +1095,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"company\": 1,\n  \"name\": \"Lead Developer\",\n  \"description\": \"Lead Developer role managing team delivery and technical architecture\",\n  \"is_system_role\": false\n}"
+                            "raw": "{\n  \"name\": \"Lead Developer\",\n  \"display_name\": \"Lead Developer\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/role/{{role_id}}/",
@@ -1627,7 +1403,7 @@
                                 {
                                     "key": "resource",
                                     "value": "",
-                                    "description": "Filter by resource name (e.g., employee, project)"
+                                    "description": "Filter by resource name (e.g., project, company)"
                                 },
                                 {
                                     "key": "action",
@@ -1677,7 +1453,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"name\": \"employee.create\",\n  \"resource\": \"employee\",\n  \"action\": \"create\",\n  \"description\": \"Allows creating new employee records\"\n}"
+                            "raw": "{\n  \"name\": \"project.create\",\n  \"resource\": \"project\",\n  \"action\": \"create\",\n  \"description\": \"Allows creating new projects\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/permission/",
@@ -1756,7 +1532,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"name\": \"employee.update\",\n  \"resource\": \"employee\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating existing employee records\"\n}"
+                            "raw": "{\n  \"name\": \"project.update\",\n  \"resource\": \"project\",\n  \"action\": \"update\",\n  \"description\": \"Allows updating existing projects\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/permission/{{permission_id}}/",
@@ -1786,7 +1562,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"description\": \"Updated description for employee modification permission\"\n}"
+                            "raw": "{\n  \"description\": \"Updated description for project modification permission\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/permission/{{permission_id}}/",
@@ -1883,11 +1659,6 @@
                                     "description": "Filter by project priority (LOW, MEDIUM, HIGH, CRITICAL)"
                                 },
                                 {
-                                    "key": "project_manager",
-                                    "value": "",
-                                    "description": "Filter by project manager employee ID"
-                                },
-                                {
                                     "key": "page",
                                     "value": "1",
                                     "description": "Page number (default: 1)"
@@ -1930,7 +1701,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Comprehensive internal enterprise resource management system\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-03-31\",\n  \"status\": \"PLANNED\",\n  \"priority\": \"HIGH\",\n  \"project_manager\": 1,\n  \"budget\": \"75000.00\"\n}"
+                            "raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Comprehensive internal enterprise resource management system\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-03-31\",\n  \"status\": \"PLANNED\",\n  \"priority\": \"HIGH\",\n  \"budget\": \"75000.00\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/project/",
@@ -1980,7 +1751,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal (Phase 1)\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Updated phase 1 scope for enterprise portal\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-04-30\",\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\",\n  \"project_manager\": 1,\n  \"budget\": \"85000.00\"\n}"
+                            "raw": "{\n  \"company\": 1,\n  \"department\": 1,\n  \"name\": \"Enterprise EMS Portal (Phase 1)\",\n  \"code\": \"PRJ-EMS-01\",\n  \"description\": \"Updated phase 1 scope for enterprise portal\",\n  \"start_date\": \"2026-09-01\",\n  \"end_date\": \"2027-04-30\",\n  \"status\": \"ACTIVE\",\n  \"priority\": \"CRITICAL\",\n  \"budget\": \"85000.00\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/api/project/{{project_id}}/",
@@ -2046,210 +1817,6 @@
                             ]
                         },
                         "description": "Deletes a project record by ID."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get All Project Members",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/project/members/?project=&employee=&role=&search=&page=1&page_size=10",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "project",
-                                "members",
-                                ""
-                            ],
-                            "query": [
-                                {
-                                    "key": "project",
-                                    "value": "",
-                                    "description": "Filter by project ID"
-                                },
-                                {
-                                    "key": "employee",
-                                    "value": "",
-                                    "description": "Filter by employee ID"
-                                },
-                                {
-                                    "key": "role",
-                                    "value": "",
-                                    "description": "Filter by role (case-insensitive substring)"
-                                },
-                                {
-                                    "key": "search",
-                                    "value": "",
-                                    "description": "Search in role, employee code, designation, or user name"
-                                },
-                                {
-                                    "key": "page",
-                                    "value": "1",
-                                    "description": "Page number (default: 1)"
-                                },
-                                {
-                                    "key": "page_size",
-                                    "value": "10",
-                                    "description": "Number of items per page (default: 10)"
-                                }
-                            ]
-                        },
-                        "description": "Retrieves a paginated list of project members with optional project, employee, role, search, page, and page_size filters."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Add Project Member",
-                    "event": [
-                        {
-                            "listen": "test",
-                            "script": {
-                                "exec": [
-                                    "var response = pm.response.json();",
-                                    "if (response && response.data && response.data.id) {",
-                                    "    pm.environment.set('project_member_id', response.data.id);",
-                                    "    console.log('Created project_member_id saved to environment:', response.data.id);",
-                                    "}"
-                                ],
-                                "type": "text/javascript"
-                            }
-                        }
-                    ],
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": null\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/project/members/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "project",
-                                "members",
-                                ""
-                            ]
-                        },
-                        "description": "Adds an employee as a member to a project with a specific project role and join date."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Get Project Member Detail",
-                    "request": {
-                        "method": "GET",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "project",
-                                "members",
-                                "{{project_member_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Retrieves full details of a specific project member record by ID."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Update Project Member (PUT)",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"project\": 1,\n  \"employee\": 1,\n  \"role\": \"Lead Backend Developer\",\n  \"joined_at\": \"2026-09-01\",\n  \"left_at\": \"2027-03-31\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "project",
-                                "members",
-                                "{{project_member_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Performs a full update of an existing project member record."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Update Project Member Partial (PATCH)",
-                    "request": {
-                        "method": "PATCH",
-                        "header": [
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n  \"role\": \"Software Architect\"\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "project",
-                                "members",
-                                "{{project_member_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Performs a partial update of specific fields of an existing project member record."
-                    },
-                    "response": []
-                },
-                {
-                    "name": "Delete Project Member",
-                    "request": {
-                        "method": "DELETE",
-                        "header": [],
-                        "url": {
-                            "raw": "{{base_url}}/api/project/members/{{project_member_id}}/",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "project",
-                                "members",
-                                "{{project_member_id}}",
-                                ""
-                            ]
-                        },
-                        "description": "Removes a member from a project by ID."
                     },
                     "response": []
                 }

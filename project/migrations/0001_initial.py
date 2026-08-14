@@ -11,7 +11,6 @@ class Migration(migrations.Migration):
     dependencies = [
         ('company', '0001_initial'),
         ('department', '0002_remove_department_manager'),
-        ('employee', '0002_alter_employee_user'),
     ]
 
     operations = [
@@ -31,7 +30,6 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='projects', to='company.company')),
                 ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='projects', to='department.department')),
-                ('project_manager', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='managed_projects', to='employee.employee')),
             ],
             options={
                 'verbose_name_plural': 'Projects',

@@ -8,17 +8,15 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 | # | Model Name | App | Base URL Path | Total Endpoints |
 |---|---|---|---|---|
-| 1 | **User** | `user` | `/api/user/` | 10 |
+| 1 | **User** | `user` | `/api/user/` | 13 |
 | 2 | **Company** | `company` | `/api/company/` | 6 |
 | 3 | **Department** | `department` | `/api/department/` | 6 |
-| 4 | **Employee** | `employee` | `/api/employee/` | 6 |
-| 5 | **Role** | `role` | `/api/role/` | 6 |
-| 6 | **RolePermission** | `role` | `/api/role/permissions/` | 6 |
-| 7 | **Permission** | `permission` | `/api/permission/` | 6 |
-| 8 | **Project** | `project` | `/api/project/` | 6 |
-| 9 | **ProjectMember** | `project` | `/api/project/members/` | 6 |
-| 10 | **Designation** | `designation` | `/api/designation/` | 6 |
-| **Total** | **10 Models** | | | **64 Endpoints** |
+| 4 | **Role** | `role` | `/api/role/` | 6 |
+| 5 | **RolePermission** | `role` | `/api/role/permissions/` | 6 |
+| 6 | **Permission** | `permission` | `/api/permission/` | 6 |
+| 7 | **Project** | `project` | `/api/project/` | 6 |
+| 8 | **Designation** | `designation` | `/api/designation/` | 6 |
+| **Total** | **8 Models** | | | **55 Endpoints** |
 
 ---
 
@@ -26,13 +24,11 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 1. [User Model APIs](#1-user-model-apis)
 2. [Company Model APIs](#2-company-model-apis)
 3. [Department Model APIs](#3-department-model-apis)
-4. [Employee Model APIs](#4-employee-model-apis)
-5. [Role Model APIs](#5-role-model-apis)
-6. [RolePermission Model APIs](#6-rolepermission-model-apis)
-7. [Permission Model APIs](#7-permission-model-apis)
-8. [Project Model APIs](#8-project-model-apis)
-9. [ProjectMember Model APIs](#9-projectmember-model-apis)
-10. [Designation Model APIs](#10-designation-model-apis)
+4. [Role Model APIs](#4-role-model-apis)
+5. [RolePermission Model APIs](#5-rolepermission-model-apis)
+6. [Permission Model APIs](#6-permission-model-apis)
+7. [Project Model APIs](#7-project-model-apis)
+8. [Designation Model APIs](#8-designation-model-apis)
 
 ---
 
@@ -41,7 +37,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 **App**: `user`  
 **Model**: `User` (`user/models.py`)  
 **Base Path**: `/api/user/`  
-**Description**: Manages user accounts, authentication (JWT), user profile details, roles, company assignments, soft deletion, and account restoration.
+**Description**: Manages user accounts, authentication (JWT), user profile details, roles, company assignments, soft deletion, pending user approvals, and account restoration.
 
 ### Endpoints List
 
@@ -276,72 +272,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ---
 
-## 4. Employee Model APIs
-
-**App**: `employee`  
-**Model**: `Employee` (`employee/models.py`)  
-**Base Path**: `/api/employee/`  
-**Description**: Manages employee profiles linked to User accounts, Company, Department, and Designation entities with employment type, status, and personal details.
-
-### Endpoints List
-
-#### 4.1. List Employees
-* **Method**: `GET`
-* **URL Path**: `/api/employee/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Retrieves a paginated list of employees with multi-criteria filtering and text search.
-* **Query Parameters**:
-  * `search` *(optional)*: Filter by employee code, designation name, phone, or emergency contact name.
-  * `company` *(optional)*: Filter by Company ID.
-  * `department` *(optional)*: Filter by Department ID.
-  * `status` *(optional)*: Filter by EmployeeStatus (`ACTIVE`, `INACTIVE`, `ON_LEAVE`, `TERMINATED`, `RESIGNED`).
-  * `employment_type` *(optional)*: Filter by EmploymentType (`FULL_TIME`, `PART_TIME`, `CONTRACT`, `INTERN`, `TEMPORARY`).
-  * `gender` *(optional)*: Filter by Gender (`Male`, `Female`, `Other`).
-  * `page` *(optional)*: Page number for pagination.
-  * `page_size` *(optional)*: Items per page (default: 10).
-* **Response Status**: `200 OK`
-
-#### 4.2. Create Employee
-* **Method**: `POST`
-* **URL Path**: `/api/employee/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Creates a new employee profile associated with a user, company, department, and designation.
-* **Request Body**: `user` *(optional)*, `company` (ID), `department` *(optional, ID)*, `employee_code`, `designation` *(optional, Designation ID)*, `joining_date`, `employment_type`, `date_of_birth` *(optional)*, `gender` *(optional)*, `phone` *(optional)*, `address` *(optional)*, `emergency_contact_name` *(optional)*, `emergency_contact_phone` *(optional)*, `status`
-* **Response Status**: `201 Created` (returns the full employee profile including read-only fields like `designation_name`)
-
-#### 4.3. Get Employee Details
-* **Method**: `GET`
-* **URL Path**: `/api/employee/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Retrieves detailed information for a specific employee profile by ID.
-* **Response Status**: `200 OK`
-
-#### 4.4. Update Employee (Full - PUT)
-* **Method**: `PUT`
-* **URL Path**: `/api/employee/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Fully updates all attributes of an employee profile.
-* **Request Body**: Full set of `Employee` fields (with `designation` as a Designation ID).
-* **Response Status**: `200 OK`
-
-#### 4.5. Update Employee (Partial - PATCH)
-* **Method**: `PATCH`
-* **URL Path**: `/api/employee/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Partially updates selected fields of an employee profile.
-* **Request Body**: Any subset of `Employee` fields (with `designation` as a Designation ID).
-* **Response Status**: `200 OK`
-
-#### 4.6. Delete Employee
-* **Method**: `DELETE`
-* **URL Path**: `/api/employee/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Permanently deletes an employee record by ID.
-* **Response Status**: `200 OK`
-
----
-
-## 5. Role Model APIs
+## 4. Role Model APIs
 
 **App**: `role`  
 **Model**: `Role` (`role/models.py`)  
@@ -350,42 +281,41 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ### Endpoints List
 
-#### 5.1. List Roles
+#### 4.1. List Roles
 * **Method**: `GET`
 * **URL Path**: `/api/role/`
 * **Authentication**: Public (`AllowAny`)
-* **Description**: Retrieves a paginated list of system and company-specific roles.
+* **Description**: Retrieves a paginated list of roles.
 * **Query Parameters**:
-  * `search` *(optional)*: Filter by role name or description.
-  * `company` *(optional)*: Filter by Company ID.
+  * `search` *(optional)*: Filter by role name or display name.
   * `page` *(optional)*: Page number.
   * `page_size` *(optional)*: Page size (default: 10).
 * **Response Status**: `200 OK`
 
-#### 5.2. Create Role
+#### 4.2. Create Role
 * **Method**: `POST`
 * **URL Path**: `/api/role/`
 * **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Creates a new role for a company. Role code is automatically generated from role name if not provided.
-* **Request Body**: `company`, `name`, `description`, `is_system_role`
+* **Description**: Creates a new role record. Role name must be unique.
+* **Request Body**: `name`, `display_name`
 * **Response Status**: `201 Created`
 
-#### 5.3. Get Role Details
+#### 4.3. Get Role Details
 * **Method**: `GET`
 * **URL Path**: `/api/role/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Retrieves complete details of a specific role by ID.
 * **Response Status**: `200 OK`
 
-#### 5.4. Update Role (Full - PUT)
+#### 4.4. Update Role (Full - PUT)
 * **Method**: `PUT`
 * **URL Path**: `/api/role/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Overwrites all properties of a role. Regenerates role code if role name changes.
-* **Request Body**: `company`, `name`, `description`, `is_system_role`
+* **Description**: Overwrites all properties of a role.
+* **Request Body**: `name`, `display_name`
 * **Response Status**: `200 OK`
 
-#### 5.5. Update Role (Partial - PATCH)
+#### 4.5. Update Role (Partial - PATCH)
 * **Method**: `PATCH`
 * **URL Path**: `/api/role/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -393,7 +323,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: Any subset of `Role` fields.
 * **Response Status**: `200 OK`
 
-#### 5.6. Delete Role
+#### 4.6. Delete Role
 * **Method**: `DELETE`
 * **URL Path**: `/api/role/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -402,7 +332,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ---
 
-## 6. RolePermission Model APIs
+## 5. RolePermission Model APIs
 
 **App**: `role`  
 **Model**: `RolePermission` (`role/models.py`)  
@@ -411,7 +341,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ### Endpoints List
 
-#### 6.1. List Role Permissions
+#### 5.1. List Role Permissions
 * **Method**: `GET`
 * **URL Path**: `/api/role/permissions/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -424,7 +354,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
   * `page_size` *(optional)*: Page size (default: 10).
 * **Response Status**: `200 OK`
 
-#### 6.2. Assign Permission to Role (Create)
+#### 5.2. Assign Permission to Role (Create)
 * **Method**: `POST`
 * **URL Path**: `/api/role/permissions/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -432,14 +362,14 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: `role`, `permission`
 * **Response Status**: `201 Created`
 
-#### 6.3. Get Role Permission Details
+#### 5.3. Get Role Permission Details
 * **Method**: `GET`
 * **URL Path**: `/api/role/permissions/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Retrieves details of a single role permission mapping by ID.
 * **Response Status**: `200 OK`
 
-#### 6.4. Update Role Permission (Full - PUT)
+#### 5.4. Update Role Permission (Full - PUT)
 * **Method**: `PUT`
 * **URL Path**: `/api/role/permissions/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -447,7 +377,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: `role`, `permission`
 * **Response Status**: `200 OK`
 
-#### 6.5. Update Role Permission (Partial - PATCH)
+#### 5.5. Update Role Permission (Partial - PATCH)
 * **Method**: `PATCH`
 * **URL Path**: `/api/role/permissions/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -455,7 +385,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: `role` or `permission`
 * **Response Status**: `200 OK`
 
-#### 6.6. Delete Role Permission
+#### 5.6. Delete Role Permission
 * **Method**: `DELETE`
 * **URL Path**: `/api/role/permissions/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -464,29 +394,29 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ---
 
-## 7. Permission Model APIs
+## 6. Permission Model APIs
 
 **App**: `permission`  
 **Model**: `Permission` (`permission/models.py`)  
 **Base Path**: `/api/permission/`  
-**Description**: Manages granular system permission definitions formatted as resource-action pairs (e.g. `employee.view`, `company.create`).
+**Description**: Manages granular system permission definitions formatted as resource-action pairs (e.g. `project.view`, `company.create`).
 
 ### Endpoints List
 
-#### 7.1. List Permissions
+#### 6.1. List Permissions
 * **Method**: `GET`
 * **URL Path**: `/api/permission/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Retrieves a paginated list of all system permission definitions with filtering and search.
 * **Query Parameters**:
   * `search` *(optional)*: Filter by permission name, resource, action, or description.
-  * `resource` *(optional)*: Filter exact resource string (e.g. `employee`).
+  * `resource` *(optional)*: Filter exact resource string (e.g. `project`).
   * `action` *(optional)*: Filter exact action string (e.g. `create`).
   * `page` *(optional)*: Page number.
   * `page_size` *(optional)*: Page size (default: 10).
 * **Response Status**: `200 OK`
 
-#### 7.2. Create Permission
+#### 6.2. Create Permission
 * **Method**: `POST`
 * **URL Path**: `/api/permission/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -494,14 +424,14 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: `resource`, `action`, `name` *(optional, auto-generated as `resource.action` if blank)*, `description`
 * **Response Status**: `201 Created`
 
-#### 7.3. Get Permission Details
+#### 6.3. Get Permission Details
 * **Method**: `GET`
 * **URL Path**: `/api/permission/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Retrieves details of a specific permission by ID.
 * **Response Status**: `200 OK`
 
-#### 7.4. Update Permission (Full - PUT)
+#### 6.4. Update Permission (Full - PUT)
 * **Method**: `PUT`
 * **URL Path**: `/api/permission/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -509,7 +439,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: `resource`, `action`, `name`, `description`
 * **Response Status**: `200 OK`
 
-#### 7.5. Update Permission (Partial - PATCH)
+#### 6.5. Update Permission (Partial - PATCH)
 * **Method**: `PATCH`
 * **URL Path**: `/api/permission/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -517,7 +447,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: Any subset of `Permission` fields.
 * **Response Status**: `200 OK`
 
-#### 7.6. Delete Permission
+#### 6.6. Delete Permission
 * **Method**: `DELETE`
 * **URL Path**: `/api/permission/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -526,16 +456,16 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ---
 
-## 8. Project Model APIs
+## 7. Project Model APIs
 
 **App**: `project`  
 **Model**: `Project` (`project/models.py`)  
 **Base Path**: `/api/project/`  
-**Description**: Manages company projects, timelines, status tracking, priorities, budgets, and project manager assignments.
+**Description**: Manages company projects, timelines, status tracking, priorities, and budgets.
 
 ### Endpoints List
 
-#### 8.1. List Projects
+#### 7.1. List Projects
 * **Method**: `GET`
 * **URL Path**: `/api/project/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -546,27 +476,26 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
   * `department` *(optional)*: Filter by Department ID.
   * `status` *(optional)*: Filter by ProjectStatus (`PLANNED`, `ACTIVE`, `ON_HOLD`, `COMPLETED`, `CANCELLED`).
   * `priority` *(optional)*: Filter by ProjectPriority (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
-  * `project_manager` *(optional)*: Filter by project manager (Employee ID).
   * `page` *(optional)*: Page number.
   * `page_size` *(optional)*: Page size (default: 10).
 * **Response Status**: `200 OK`
 
-#### 8.2. Create Project
+#### 7.2. Create Project
 * **Method**: `POST`
 * **URL Path**: `/api/project/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Creates a new project under a company and optional department.
-* **Request Body**: `company`, `department`, `name`, `code`, `description`, `start_date`, `end_date`, `status`, `priority`, `project_manager`, `budget`
+* **Request Body**: `company`, `department`, `name`, `code`, `description`, `start_date`, `end_date`, `status`, `priority`, `budget`
 * **Response Status**: `201 Created`
 
-#### 8.3. Get Project Details
+#### 7.3. Get Project Details
 * **Method**: `GET`
 * **URL Path**: `/api/project/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Retrieves detailed information for a specific project by ID.
 * **Response Status**: `200 OK`
 
-#### 8.4. Update Project (Full - PUT)
+#### 7.4. Update Project (Full - PUT)
 * **Method**: `PUT`
 * **URL Path**: `/api/project/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -574,7 +503,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: Full set of `Project` fields.
 * **Response Status**: `200 OK`
 
-#### 8.5. Update Project (Partial - PATCH)
+#### 7.5. Update Project (Partial - PATCH)
 * **Method**: `PATCH`
 * **URL Path**: `/api/project/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -582,7 +511,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: Any subset of `Project` fields.
 * **Response Status**: `200 OK`
 
-#### 8.6. Delete Project
+#### 7.6. Delete Project
 * **Method**: `DELETE`
 * **URL Path**: `/api/project/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -591,70 +520,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ---
 
-## 9. ProjectMember Model APIs
-
-**App**: `project`  
-**Model**: `ProjectMember` (`project/models.py`)  
-**Base Path**: `/api/project/members/`  
-**Description**: Manages employee team assignments to specific projects, including member role, joined date, and exit date.
-
-### Endpoints List
-
-#### 9.1. List Project Members
-* **Method**: `GET`
-* **URL Path**: `/api/project/members/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Retrieves a paginated list of project members filtered by project, employee, or role.
-* **Query Parameters**:
-  * `project` *(optional)*: Filter by Project ID.
-  * `employee` *(optional)*: Filter by Employee ID.
-  * `role` *(optional)*: Filter by member role name.
-  * `search` *(optional)*: Filter by member role, employee code, designation, or user first/last name.
-  * `page` *(optional)*: Page number.
-  * `page_size` *(optional)*: Page size (default: 10).
-* **Response Status**: `200 OK`
-
-#### 9.2. Add Project Member (Create)
-* **Method**: `POST`
-* **URL Path**: `/api/project/members/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Assigns an employee to a project with role title and dates.
-* **Request Body**: `project`, `employee`, `role`, `joined_at`, `left_at`
-* **Response Status**: `201 Created`
-
-#### 9.3. Get Project Member Details
-* **Method**: `GET`
-* **URL Path**: `/api/project/members/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Retrieves details for a specific project member record by ID.
-* **Response Status**: `200 OK`
-
-#### 9.4. Update Project Member (Full - PUT)
-* **Method**: `PUT`
-* **URL Path**: `/api/project/members/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Overwrites all properties of a project member assignment record.
-* **Request Body**: `project`, `employee`, `role`, `joined_at`, `left_at`
-* **Response Status**: `200 OK`
-
-#### 9.5. Update Project Member (Partial - PATCH)
-* **Method**: `PATCH`
-* **URL Path**: `/api/project/members/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Partially updates selected fields of a project member record (e.g., set `left_at` date when offboarding).
-* **Request Body**: Any subset of `ProjectMember` fields.
-* **Response Status**: `200 OK`
-
-#### 9.6. Remove Project Member (Delete)
-* **Method**: `DELETE`
-* **URL Path**: `/api/project/members/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Removes an employee assignment from a project by deleting the project member record.
-* **Response Status**: `200 OK`
-
----
-
-## 10. Designation Model APIs
+## 8. Designation Model APIs
 
 **App**: `designation`  
 **Model**: `Designation` (`designation/models.py`)  
@@ -663,7 +529,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 
 ### Endpoints List
 
-#### 10.1. List Designations
+#### 8.1. List Designations
 * **Method**: `GET`
 * **URL Path**: `/api/designation/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -676,7 +542,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
   * `page_size` *(optional)*: Page size (default: 10).
 * **Response Status**: `200 OK`
 
-#### 10.2. Create Designation
+#### 8.2. Create Designation
 * **Method**: `POST`
 * **URL Path**: `/api/designation/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -684,14 +550,14 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: `company` (ID), `name`, `code`, `description` *(optional)*, `is_active` *(optional, default: true)*
 * **Response Status**: `201 Created`
 
-#### 10.3. Get Designation Details
+#### 8.3. Get Designation Details
 * **Method**: `GET`
 * **URL Path**: `/api/designation/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Retrieves detailed information for a specific designation by ID.
 * **Response Status**: `200 OK`
 
-#### 10.4. Update Designation (Full - PUT)
+#### 8.4. Update Designation (Full - PUT)
 * **Method**: `PUT`
 * **URL Path**: `/api/designation/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -699,7 +565,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: `company`, `name`, `code`, `description`, `is_active`
 * **Response Status**: `200 OK`
 
-#### 10.5. Update Designation (Partial - PATCH)
+#### 8.5. Update Designation (Partial - PATCH)
 * **Method**: `PATCH`
 * **URL Path**: `/api/designation/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
@@ -707,7 +573,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Request Body**: Any subset of `Designation` fields.
 * **Response Status**: `200 OK`
 
-#### 10.6. Delete Designation
+#### 8.6. Delete Designation
 * **Method**: `DELETE`
 * **URL Path**: `/api/designation/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)

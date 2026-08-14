@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Project, ProjectMember
+from .models import Project
 
 
 @admin.register(Project)
@@ -11,7 +11,6 @@ class ProjectAdmin(admin.ModelAdmin):
         'department',
         'status',
         'priority',
-        'project_manager',
         'budget',
         'start_date',
         'end_date',
@@ -27,30 +26,6 @@ class ProjectAdmin(admin.ModelAdmin):
         'name',
         'code',
         'description',
-    )
-    ordering = ('-created_at',)
-
-
-@admin.register(ProjectMember)
-class ProjectMemberAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'project',
-        'employee',
-        'role',
-        'joined_at',
-        'left_at',
-        'created_at',
-    )
-    list_filter = (
-        'role',
-        'joined_at',
-        'project',
-    )
-    search_fields = (
-        'role',
-        'project__name',
-        'employee__employee_code',
     )
     ordering = ('-created_at',)
 

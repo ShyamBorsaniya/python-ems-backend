@@ -15,10 +15,10 @@ class PermissionApiTests(APITestCase):
         )
         self.client.force_authenticate(user=self.user)
         self.permission = Permission.objects.create(
-            name="employee.create",
-            resource="employee",
+            name="project.create",
+            resource="project",
             action="create",
-            description="Allows creating employees"
+            description="Allows creating projects"
         )
         self.list_create_url = reverse("permission-list-create")
 
@@ -69,26 +69,26 @@ class PermissionApiTests(APITestCase):
 
     def test_filter_permissions_by_search_resource_and_action(self):
         Permission.objects.create(
-            name="project.read",
-            resource="project",
+            name="task.read",
+            resource="task",
             action="read",
-            description="View projects"
+            description="View tasks"
         )
         Permission.objects.create(
-            name="project.delete",
-            resource="project",
+            name="task.delete",
+            resource="task",
             action="delete",
-            description="Remove projects"
+            description="Remove tasks"
         )
 
         # Search filter
-        res_search = self.client.get(f"{self.list_create_url}?search=View projects")
+        res_search = self.client.get(f"{self.list_create_url}?search=View tasks")
         self.assertEqual(res_search.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res_search.data["data"]["results"]), 1)
-        self.assertEqual(res_search.data["data"]["results"][0]["name"], "project.read")
+        self.assertEqual(res_search.data["data"]["results"][0]["name"], "task.read")
 
         # Resource filter
-        res_resource = self.client.get(f"{self.list_create_url}?resource=project")
+        res_resource = self.client.get(f"{self.list_create_url}?resource=task")
         self.assertEqual(res_resource.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res_resource.data["data"]["results"]), 2)
 
@@ -96,7 +96,7 @@ class PermissionApiTests(APITestCase):
         res_action = self.client.get(f"{self.list_create_url}?action=delete")
         self.assertEqual(res_action.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res_action.data["data"]["results"]), 1)
-        self.assertEqual(res_action.data["data"]["results"][0]["name"], "project.delete")
+        self.assertEqual(res_action.data["data"]["results"][0]["name"], "task.delete")
 
     def test_create_permission_explicit_name(self):
         payload = {
@@ -138,18 +138,18 @@ class PermissionApiTests(APITestCase):
         # GET detail
         get_res = self.client.get(detail_url)
         self.assertEqual(get_res.status_code, status.HTTP_200_OK)
-        self.assertEqual(get_res.data["data"]["name"], "employee.create")
+        self.assertEqual(get_res.data["data"]["name"], "project.create")
 
         # PUT update
         put_payload = {
-            "name": "employee.write",
-            "resource": "employee",
+            "name": "project.write",
+            "resource": "project",
             "action": "write",
-            "description": "Updated employee write"
+            "description": "Updated project write"
         }
         put_res = self.client.put(detail_url, put_payload, format="json")
         self.assertEqual(put_res.status_code, status.HTTP_200_OK)
-        self.assertEqual(put_res.data["data"]["name"], "employee.write")
+        self.assertEqual(put_res.data["data"]["name"], "project.write")
         self.assertEqual(put_res.data["data"]["action"], "write")
 
         # PATCH update
@@ -164,3 +164,4 @@ class PermissionApiTests(APITestCase):
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(Permission.objects.filter(pk=self.permission.pk).exists())
+

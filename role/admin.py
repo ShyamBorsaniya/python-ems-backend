@@ -9,9 +9,9 @@ class RolePermissionInline(admin.TabularInline):
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'code', 'company', 'is_system_role', 'created_at', 'updated_at')
-    search_fields = ('name', 'code', 'description', 'company__name')
-    list_filter = ('is_system_role', 'company', 'created_at')
+    list_display = ('id', 'name', 'display_name', 'created_at', 'updated_at')
+    search_fields = ('name', 'display_name')
+    list_filter = ('created_at',)
     inlines = [RolePermissionInline]
 
 

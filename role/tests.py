@@ -15,15 +15,9 @@ class RoleApiTests(APITestCase):
             code="TECH01",
             email="info@techcorp.com"
         )
-        self.other_company = Company.objects.create(
-            name="Other Corp",
-            code="OTHER01",
-            email="info@othercorp.com"
-        )
         self.role = Role.objects.create(
-            company=self.company,
             name="Admin",
-            description="Administrator role"
+            display_name="Administrator role"
         )
         self.user = User.objects.create_user(
             username="testuser",
@@ -42,23 +36,11 @@ class RoleApiTests(APITestCase):
         self.assertTrue(response.data["success"])
         self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
 
-    def test_list_roles_unauthenticated_filter_by_company(self):
-        unauthenticated_client = APIClient()
-        Role.objects.create(
-            company=self.other_company,
-            name="Other Company Role"
-        )
-        response = unauthenticated_client.get(f"{self.list_create_url}?company={self.other_company.id}")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
-        self.assertEqual(response.data["data"]["results"][0]["name"], "Other Company Role")
-
     def test_create_role_unauthenticated(self):
         unauthenticated_client = APIClient()
         payload = {
             "name": "Quality Analyst",
-            "description": "Tests software",
-            "company": self.company.id
+            "display_name": "Tests software"
         }
         response = unauthenticated_client.post(self.list_create_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
@@ -77,9 +59,8 @@ class RoleApiTests(APITestCase):
         # Create 12 total roles (1 exists + 11 new)
         for i in range(11):
             Role.objects.create(
-                company=self.company,
                 name=f"Role {i}",
-                description=f"Description {i}"
+                display_name=f"Description {i}"
             )
 
         # Page 1
@@ -103,7 +84,6 @@ class RoleApiTests(APITestCase):
     def test_list_roles_custom_page_size(self):
         for i in range(4):
             Role.objects.create(
-                company=self.company,
                 name=f"Custom Role {i}"
             )
         response = self.client.get(f"{self.list_create_url}?page_size=2")
@@ -112,96 +92,39 @@ class RoleApiTests(APITestCase):
         self.assertEqual(response.data["data"]["pagination"]["page_size"], 2)
         self.assertEqual(response.data["data"]["pagination"]["total_pages"], 3)
 
-    def test_list_roles_filter_by_search_and_company(self):
+    def test_list_roles_filter_by_search(self):
         Role.objects.create(
-            company=self.company,
             name="Developer",
-            description="Writes code"
+            display_name="Writes code"
         )
         Role.objects.create(
-            company=self.other_company,
             name="External Auditor",
-            description="Audit company"
+            display_name="Audit company"
         )
 
-        # Search filter (user belongs to self.company, so only self.company roles are included)
+        # Search filter
         res_search = self.client.get(f"{self.list_create_url}?search=Developer")
         self.assertEqual(res_search.status_code, status.HTTP_200_OK)
         self.assertEqual(len(res_search.data["data"]["results"]), 1)
         self.assertEqual(res_search.data["data"]["results"][0]["name"], "Developer")
 
-        # Company filter (user already scoped to self.company)
-        res_company = self.client.get(f"{self.list_create_url}?company={self.company.id}")
-        self.assertEqual(res_company.status_code, status.HTTP_200_OK)
-        self.assertEqual(res_company.data["data"]["pagination"]["total_items"], 2)
-
-    def test_list_roles_filters_automatically_by_user_company(self):
-        Role.objects.create(
-            company=self.other_company,
-            name="Other Company Role",
-            description="Role in another company"
-        )
-        # self.user belongs to self.company, so other company role should not be listed
-        response = self.client.get(self.list_create_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        role_ids = [r["id"] for r in response.data["data"]["results"]]
-        self.assertIn(self.role.id, role_ids)
-        self.assertEqual(response.data["data"]["pagination"]["total_items"], 1)
-
-    def test_list_roles_user_without_company(self):
-        user_no_company = User.objects.create_user(
-            username="nocompanyuser",
-            email="nocompany@example.com",
-            password="Password123!",
-            company=None
-        )
-        Role.objects.create(
-            company=self.other_company,
-            name="Other Company Role"
-        )
-        self.client.force_authenticate(user=user_no_company)
-
-        # Should list all roles from all companies
-        response = self.client.get(self.list_create_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["pagination"]["total_items"], 2)
-
-        # Filtering by company_id query param
-        response_param = self.client.get(f"{self.list_create_url}?company={self.other_company.id}")
-        self.assertEqual(response_param.status_code, status.HTTP_200_OK)
-        self.assertEqual(response_param.data["data"]["pagination"]["total_items"], 1)
-        self.assertEqual(response_param.data["data"]["results"][0]["name"], "Other Company Role")
-
     def test_create_role(self):
         payload = {
             "name": "Quality Analyst",
-            "description": "Tests software",
-            "company": self.company.id
+            "display_name": "Tests software"
         }
         response = self.client.post(self.list_create_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["data"]["name"], "Quality Analyst")
-        self.assertEqual(response.data["data"]["code"], "QUALITY_ANALYST")
+        self.assertEqual(response.data["data"]["display_name"], "Tests software")
 
-    def test_auto_generate_code_and_uniqueness(self):
-        role1 = Role.objects.create(name="Team Lead", company=self.company)
-        self.assertEqual(role1.code, "TEAM_LEAD")
-
-        role2 = Role.objects.create(name="Team Lead", company=self.other_company)
-        self.assertEqual(role2.code, "TEAM_LEAD_1")
-
-        role3 = Role.objects.create(name="Team Lead", company=self.company)
-        self.assertEqual(role3.code, "TEAM_LEAD_2")
-
-    def test_system_role_creation_without_company(self):
-        system_role = Role.objects.create(
-            name="Super Admin",
-            is_system_role=True,
-            company=None
-        )
-        self.assertEqual(system_role.code, "SUPER_ADMIN")
-        self.assertTrue(system_role.is_system_role)
-        self.assertIsNone(system_role.company)
+    def test_role_name_uniqueness(self):
+        payload = {
+            "name": "Admin",
+            "display_name": "Another Admin"
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_role_detail_update_delete(self):
         detail_url = reverse("role-detail", kwargs={"pk": self.role.pk})
@@ -210,24 +133,21 @@ class RoleApiTests(APITestCase):
         get_res = self.client.get(detail_url)
         self.assertEqual(get_res.status_code, status.HTTP_200_OK)
         self.assertEqual(get_res.data["data"]["name"], "Admin")
-        self.assertEqual(get_res.data["data"]["code"], "ADMIN")
 
         # PUT update
         update_payload = {
             "name": "Super Admin",
-            "description": "Updated description",
-            "company": self.company.id
+            "display_name": "Updated description"
         }
         put_res = self.client.put(detail_url, update_payload, format="json")
         self.assertEqual(put_res.status_code, status.HTTP_200_OK)
         self.assertEqual(put_res.data["data"]["name"], "Super Admin")
-        self.assertEqual(put_res.data["data"]["code"], "SUPER_ADMIN")
+        self.assertEqual(put_res.data["data"]["display_name"], "Updated description")
 
         # PATCH update name
         patch_res = self.client.patch(detail_url, {"name": "Chief Executive"}, format="json")
         self.assertEqual(patch_res.status_code, status.HTTP_200_OK)
         self.assertEqual(patch_res.data["data"]["name"], "Chief Executive")
-        self.assertEqual(patch_res.data["data"]["code"], "CHIEF_EXECUTIVE")
 
         # DELETE assigned role (should fail with 400 due to ProtectedError)
         del_assigned_res = self.client.delete(detail_url)
@@ -235,7 +155,7 @@ class RoleApiTests(APITestCase):
         self.assertFalse(del_assigned_res.data["success"])
 
         # DELETE unassigned role (should succeed with 200 OK)
-        unassigned_role = Role.objects.create(company=self.company, name="Unassigned Role")
+        unassigned_role = Role.objects.create(name="Unassigned Role")
         unassigned_url = reverse("role-detail", kwargs={"pk": unassigned_role.pk})
         del_unassigned_res = self.client.delete(unassigned_url)
         self.assertEqual(del_unassigned_res.status_code, status.HTTP_200_OK)
@@ -251,19 +171,18 @@ class RolePermissionApiTests(APITestCase):
             email="info@techcorp.com"
         )
         self.role = Role.objects.create(
-            company=self.company,
             name="HR Manager",
-            description="HR Manager role"
+            display_name="HR Manager role"
         )
         self.permission1 = Permission.objects.create(
-            resource="employee",
+            resource="company",
             action="create",
-            description="Create employee"
+            description="Create company"
         )
         self.permission2 = Permission.objects.create(
-            resource="employee",
+            resource="company",
             action="read",
-            description="Read employee"
+            description="Read company"
         )
         self.user = User.objects.create_user(
             username="testuser",
@@ -286,7 +205,7 @@ class RolePermissionApiTests(APITestCase):
         self.assertEqual(response.data["data"]["role"], self.role.id)
         self.assertEqual(response.data["data"]["permission"], self.permission1.id)
         self.assertEqual(response.data["data"]["role_name"], "HR Manager")
-        self.assertEqual(response.data["data"]["permission_name"], "employee.create")
+        self.assertEqual(response.data["data"]["permission_name"], "company.create")
 
     def test_duplicate_permission_assignment(self):
         RolePermission.objects.create(role=self.role, permission=self.permission1)
@@ -305,6 +224,7 @@ class RolePermissionApiTests(APITestCase):
         # List all
         res = self.client.get(self.list_create_url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["success"])
         self.assertEqual(res.data["data"]["pagination"]["total_items"], 2)
 
         # Filter by role
@@ -324,12 +244,9 @@ class RolePermissionApiTests(APITestCase):
         # GET detail
         get_res = self.client.get(detail_url)
         self.assertEqual(get_res.status_code, status.HTTP_200_OK)
-        self.assertEqual(get_res.data["data"]["permission_name"], "employee.create")
+        self.assertEqual(get_res.data["data"]["permission_name"], "company.create")
 
         # DELETE
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(RolePermission.objects.filter(pk=rp.pk).exists())
-
-
-

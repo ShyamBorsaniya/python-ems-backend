@@ -14,9 +14,8 @@ class UserAuthTests(APITestCase):
             email="info@testcorp.com"
         )
         self.role = Role.objects.create(
-            company=self.company,
             name="Software Engineer",
-            description="Engineers software"
+            display_name="Engineers software"
         )
         self.register_url = reverse("register")
         self.login_url = reverse("login")
@@ -352,29 +351,6 @@ class UserAuthTests(APITestCase):
         )
         with self.assertRaises(ProtectedError):
             self.role.delete()
-
-    def test_user_employee_cascade_delete(self):
-        from employee.models import Employee, EmploymentType, EmployeeStatus
-        from datetime import date
-        user = User.objects.create_user(
-            username="empuser",
-            email="empuser@example.com",
-            password="Password123!",
-            role=self.role,
-            company=self.company
-        )
-        emp = Employee.objects.create(
-            company=self.company,
-            user=user,
-            employee_code="EMP_TEST_CASCADE",
-            designation=None,
-            joining_date=date(2025, 1, 1),
-            employment_type=EmploymentType.FULL_TIME,
-            status=EmployeeStatus.ACTIVE
-        )
-        emp_id = emp.id
-        user.delete()
-        self.assertFalse(Employee.objects.filter(id=emp_id).exists())
 
     def test_user_default_status(self):
         response = self.client.post(self.register_url, self.user_data, format="json")

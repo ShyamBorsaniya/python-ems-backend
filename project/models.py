@@ -1,7 +1,6 @@
 from django.db import models
 from company.models import Company
 from department.models import Department
-from employee.models import Employee
 
 
 class ProjectStatus(models.TextChoices):
@@ -47,13 +46,6 @@ class Project(models.Model):
         choices=ProjectPriority.choices,
         default=ProjectPriority.MEDIUM
     )
-    project_manager = models.ForeignKey(
-        Employee,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='managed_projects'
-    )
     budget = models.DecimalField(
         max_digits=12,
         decimal_places=2,
@@ -69,29 +61,4 @@ class Project(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
-
-
-class ProjectMember(models.Model):
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        related_name='members'
-    )
-    employee = models.ForeignKey(
-        Employee,
-        on_delete=models.CASCADE,
-        related_name='project_memberships'
-    )
-    role = models.CharField(max_length=100, blank=True, null=True)
-    joined_at = models.DateField(blank=True, null=True)
-    left_at = models.DateField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name_plural = "Project Members"
-
-    def __str__(self):
-        role_str = f" ({self.role})" if self.role else ""
-        return f"{self.employee} - {self.project.name}{role_str}"
 
