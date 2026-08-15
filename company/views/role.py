@@ -1,0 +1,268 @@
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from django.shortcuts import get_object_or_404
+from django.db.models import Q, ProtectedError
+from django.core.paginator import Paginator
+from rest_framework import status
+
+from company.models import Role, RolePermissionSet
+from company.serializers.role import RoleSerializer, RolePermissionSetSerializer
+from company.views.company import standard_response
+
+
+class RoleListCreateView(APIView):
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = RoleSerializer
+    page_size = 10
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    def get(self, request):
+        roles = Role.objects.all()
+        search_query = request.query_params.get("search", None)
+
+        if search_query:
+            roles = roles.filter(
+                Q(name__icontains=search_query) | Q(display_name__icontains=search_query)
+            )
+
+        page_size_param = request.query_params.get("page_size", None)
+        if page_size_param:
+            try:
+                page_size = int(page_size_param)
+            except (ValueError, TypeError):
+                page_size = self.page_size
+        else:
+            page_size = self.page_size
+
+        paginator = Paginator(roles, page_size)
+        page_number = request.query_params.get("page", 1)
+        page = paginator.get_page(page_number)
+        serializer = RoleSerializer(page.object_list, many=True, context={'request': request})
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Roles retrieved successfully",
+            data={
+                "results": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": page_size,
+                    "total_items": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "next_page": page.next_page_number() if page.has_next() else None,
+                    "previous_page": page.previous_page_number() if page.has_previous() else None,
+                },
+            }
+        )
+
+    def post(self, request):
+        serializer = RoleSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_201_CREATED,
+                message="Role created successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Role creation failed",
+            errors=serializer.errors
+        )
+
+
+class RoleDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = RoleSerializer
+
+    def get_object(self, pk):
+        return get_object_or_404(Role, pk=pk)
+
+    def get(self, request, pk):
+        role = self.get_object(pk)
+        serializer = RoleSerializer(role, context={'request': request})
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Role details retrieved successfully",
+            data=serializer.data
+        )
+
+    def put(self, request, pk):
+        role = self.get_object(pk)
+        serializer = RoleSerializer(role, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Role updated successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Role update failed",
+            errors=serializer.errors
+        )
+
+    def patch(self, request, pk):
+        role = self.get_object(pk)
+        serializer = RoleSerializer(role, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Role updated successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Role update failed",
+            errors=serializer.errors
+        )
+
+    def delete(self, request, pk):
+        role = self.get_object(pk)
+        try:
+            role.delete()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Role deleted successfully"
+            )
+        except ProtectedError:
+            return standard_response(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                message="Cannot delete role because it is assigned to users."
+            )
+
+
+class RolePermissionSetListCreateView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = RolePermissionSetSerializer
+    page_size = 10
+
+    def get(self, request):
+        role_permission_sets = RolePermissionSet.objects.all()
+        search_query = request.query_params.get("search", None)
+        role_param = request.query_params.get("role", None)
+        permission_set_param = request.query_params.get("permission_set", None)
+
+        if search_query:
+            role_permission_sets = role_permission_sets.filter(
+                Q(role__name__icontains=search_query) |
+                Q(role__display_name__icontains=search_query) |
+                Q(permission_set__name__icontains=search_query) |
+                Q(permission_set__code__icontains=search_query)
+            )
+
+        if role_param:
+            role_permission_sets = role_permission_sets.filter(role_id=role_param)
+
+        if permission_set_param:
+            role_permission_sets = role_permission_sets.filter(permission_set_id=permission_set_param)
+
+        page_size_param = request.query_params.get("page_size", None)
+        if page_size_param:
+            try:
+                page_size = int(page_size_param)
+            except (ValueError, TypeError):
+                page_size = self.page_size
+        else:
+            page_size = self.page_size
+
+        paginator = Paginator(role_permission_sets, page_size)
+        page_number = request.query_params.get("page", 1)
+        page = paginator.get_page(page_number)
+        serializer = RolePermissionSetSerializer(page.object_list, many=True, context={'request': request})
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Role permission sets retrieved successfully",
+            data={
+                "results": serializer.data,
+                "pagination": {
+                    "page": page.number,
+                    "page_size": page_size,
+                    "total_items": paginator.count,
+                    "total_pages": paginator.num_pages,
+                    "next_page": page.next_page_number() if page.has_next() else None,
+                    "previous_page": page.previous_page_number() if page.has_previous() else None,
+                },
+            }
+        )
+
+    def post(self, request):
+        serializer = RolePermissionSetSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_201_CREATED,
+                message="Role permission set assigned successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Role permission set assignment failed",
+            errors=serializer.errors
+        )
+
+
+class RolePermissionSetDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = RolePermissionSetSerializer
+
+    def get_object(self, pk):
+        return get_object_or_404(RolePermissionSet, pk=pk)
+
+    def get(self, request, pk):
+        role_permission_set = self.get_object(pk)
+        serializer = RolePermissionSetSerializer(role_permission_set, context={'request': request})
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Role permission set details retrieved successfully",
+            data=serializer.data
+        )
+
+    def put(self, request, pk):
+        role_permission_set = self.get_object(pk)
+        serializer = RolePermissionSetSerializer(role_permission_set, data=request.data, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Role permission set updated successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Role permission set update failed",
+            errors=serializer.errors
+        )
+
+    def patch(self, request, pk):
+        role_permission_set = self.get_object(pk)
+        serializer = RolePermissionSetSerializer(role_permission_set, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="Role permission set updated successfully",
+                data=serializer.data
+            )
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="Role permission set update failed",
+            errors=serializer.errors
+        )
+
+    def delete(self, request, pk):
+        role_permission_set = self.get_object(pk)
+        role_permission_set.delete()
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Role permission set deleted successfully"
+        )

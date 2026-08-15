@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-AUTH_USER_MODEL = "user.User"
+AUTH_USER_MODEL = "company.User"
 
 # Application definition
 
@@ -45,16 +45,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
 
     # Local apps
-    "user",
     "company",
-    "department",
-    "designation",
-    "role",
-    "permission",
-    "project",
-    "employee",
-    "module",
-    "permission_set",
 ]
 
 MIDDLEWARE = [

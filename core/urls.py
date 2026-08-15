@@ -22,18 +22,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    path("api/user/", include("user.urls")),
-    path("api/users/", include("user.urls")),
-    path("api/company/", include("company.urls")),
-    path("api/department/", include("department.urls")),
-    path("api/designation/", include("designation.urls")),
-    path("api/role/", include("role.urls")),
-    path("api/permission/", include("permission.urls")),
-    path("api/project/", include("project.urls")),
-    path("api/employees/", include("employee.urls")),
-    path("api/modules/", include("module.urls")),
-    path("api/permission-set/", include("permission_set.urls")),
-    path("api/permission-sets/", include("permission_set.urls")),
+    path("api/", include("company.urls")),
 ]
 
 if settings.DEBUG:
