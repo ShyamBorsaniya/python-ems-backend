@@ -34,7 +34,6 @@ class ProjectListCreateView(APIView):
         projects = Project.objects.all()
         search_query = request.query_params.get("search", None)
         company_param = request.query_params.get("company", None)
-        department_param = request.query_params.get("department", None)
         status_param = request.query_params.get("status", None)
         priority_param = request.query_params.get("priority", None)
 
@@ -47,9 +46,6 @@ class ProjectListCreateView(APIView):
             projects = projects.filter(company=request.user.company)
         elif company_param:
             projects = projects.filter(company_id=company_param)
-
-        if department_param:
-            projects = projects.filter(department_id=department_param)
 
         if status_param:
             projects = projects.filter(status=status_param.upper())

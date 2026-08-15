@@ -8,7 +8,6 @@ class ProjectAdmin(admin.ModelAdmin):
         'name',
         'code',
         'company',
-        'department',
         'status',
         'priority',
         'budget',
@@ -20,7 +19,6 @@ class ProjectAdmin(admin.ModelAdmin):
         'status',
         'priority',
         'company',
-        'department',
     )
     search_fields = (
         'name',

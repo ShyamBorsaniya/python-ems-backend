@@ -415,7 +415,6 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Query Parameters**:
   * `search` *(optional)*: Filter by project name, unique code, or description.
   * `company` *(optional)*: Filter by Company ID.
-  * `department` *(optional)*: Filter by Department ID.
   * `status` *(optional)*: Filter by ProjectStatus (`PLANNED`, `ACTIVE`, `ON_HOLD`, `COMPLETED`, `CANCELLED`).
   * `priority` *(optional)*: Filter by ProjectPriority (`LOW`, `MEDIUM`, `HIGH`, `CRITICAL`).
   * `page` *(optional)*: Page number.
@@ -426,8 +425,8 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Method**: `POST`
 * **URL Path**: `/api/project/`
 * **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Creates a new project under a company and optional department.
-* **Request Body**: `company`, `department`, `name`, `code`, `description`, `start_date`, `end_date`, `status`, `priority`, `budget`
+* **Description**: Creates a new project under a company.
+* **Request Body**: `company`, `name`, `code`, `description`, `start_date`, `end_date`, `status`, `priority`, `budget`
 * **Response Status**: `201 Created`
 
 #### 7.3. Get Project Details

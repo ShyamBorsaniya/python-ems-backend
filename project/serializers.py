@@ -1,12 +1,10 @@
 from rest_framework import serializers
 from .models import Project, ProjectStatus, ProjectPriority
 from company.models import Company
-from department.models import Department
 
 
 class ProjectSerializer(serializers.ModelSerializer):
     company_name = serializers.ReadOnlyField(source='company.name')
-    department_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Project
@@ -14,8 +12,6 @@ class ProjectSerializer(serializers.ModelSerializer):
             'id',
             'company',
             'company_name',
-            'department',
-            'department_name',
             'name',
             'code',
             'description',
@@ -32,11 +28,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'company_name',
-            'department_name',
         ]
-
-    def get_department_name(self, obj):
-        return obj.department.name if obj.department else None
 
     def validate_name(self, value):
         if not value or not value.strip():

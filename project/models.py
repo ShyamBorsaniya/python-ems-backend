@@ -1,6 +1,5 @@
 from django.db import models
 from company.models import Company
-from department.models import Department
 
 
 class ProjectStatus(models.TextChoices):
@@ -22,13 +21,6 @@ class Project(models.Model):
     company = models.ForeignKey(
         Company,
         on_delete=models.CASCADE,
-        related_name='projects'
-    )
-    department = models.ForeignKey(
-        Department,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
         related_name='projects'
     )
     name = models.CharField(max_length=255)

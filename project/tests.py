@@ -4,7 +4,6 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from company.models import Company
-from department.models import Department
 from role.models import Role
 from project.models import Project, ProjectStatus, ProjectPriority
 
@@ -18,14 +17,8 @@ class ProjectModelTest(TestCase):
             code="ALPHA",
             email="alpha@example.com"
         )
-        self.department = Department.objects.create(
-            company=self.company,
-            name="Engineering",
-            code="ENG"
-        )
         self.project = Project.objects.create(
             company=self.company,
-            department=self.department,
             name="EMS Portal",
             code="PRJ-001",
             status=ProjectStatus.ACTIVE,
@@ -49,11 +42,6 @@ class ProjectAPITest(TestCase):
             code="BETA",
             email="beta@example.com"
         )
-        self.department = Department.objects.create(
-            company=self.company,
-            name="Product",
-            code="PRD"
-        )
         self.role = Role.objects.create(
             name="Manager"
         )
@@ -68,7 +56,6 @@ class ProjectAPITest(TestCase):
 
         self.project = Project.objects.create(
             company=self.company,
-            department=self.department,
             name="CRM System",
             code="CRM-100",
             status=ProjectStatus.PLANNED,
@@ -88,7 +75,6 @@ class ProjectAPITest(TestCase):
     def test_create_project_success(self):
         payload = {
             "company": self.company.id,
-            "department": self.department.id,
             "name": "Mobile App",
             "code": "MAP-200",
             "description": "Cross-platform mobile application",
@@ -119,7 +105,6 @@ class ProjectAPITest(TestCase):
     def test_update_project(self):
         payload = {
             "company": self.company.id,
-            "department": self.department.id,
             "name": "Updated CRM System",
             "code": "CRM-100",
             "status": "COMPLETED",
