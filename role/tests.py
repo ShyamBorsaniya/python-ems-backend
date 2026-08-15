@@ -3,9 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from user.models import User
 from company.models import Company
-from module.models import Module
-from role.models import Role, RolePermission, RolePermissionSet
-from permission.models import Permission
+from role.models import Role, RolePermissionSet
 from permission_set.models import PermissionSet
 
 
@@ -162,108 +160,6 @@ class RoleApiTests(APITestCase):
         del_unassigned_res = self.client.delete(unassigned_url)
         self.assertEqual(del_unassigned_res.status_code, status.HTTP_200_OK)
         self.assertFalse(Role.objects.filter(pk=unassigned_role.pk).exists())
-
-
-class RolePermissionApiTests(APITestCase):
-
-    def setUp(self):
-        self.company = Company.objects.create(
-            name="Tech Corp",
-            code="TECH01",
-            email="info@techcorp.com"
-        )
-        self.role = Role.objects.create(
-            name="HR Manager",
-            display_name="HR Manager role"
-        )
-        self.module = Module.objects.create(
-            company=self.company,
-            name="Company Module",
-            display_name="Company Module",
-            code="company_mod"
-        )
-        self.permission1 = Permission.objects.create(
-            module=self.module,
-            name="company.create",
-            display_name="Create Company",
-            code="company:create",
-            action="create",
-            description="Create company"
-        )
-        self.permission2 = Permission.objects.create(
-            module=self.module,
-            name="company.read",
-            display_name="Read Company",
-            code="company:read",
-            action="read",
-            description="Read company"
-        )
-        self.user = User.objects.create_user(
-            username="testuser",
-            email="user@techcorp.com",
-            password="Password123!",
-            role=self.role,
-            company=self.company
-        )
-        self.client.force_authenticate(user=self.user)
-        self.list_create_url = reverse("role-permission-list-create")
-
-    def test_assign_permission_to_role(self):
-        payload = {
-            "role": self.role.id,
-            "permission": self.permission1.id
-        }
-        response = self.client.post(self.list_create_url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["data"]["role"], self.role.id)
-        self.assertEqual(response.data["data"]["permission"], self.permission1.id)
-        self.assertEqual(response.data["data"]["role_name"], "HR Manager")
-        self.assertEqual(response.data["data"]["permission_name"], "company.create")
-
-    def test_duplicate_permission_assignment(self):
-        RolePermission.objects.create(role=self.role, permission=self.permission1)
-        payload = {
-            "role": self.role.id,
-            "permission": self.permission1.id
-        }
-        response = self.client.post(self.list_create_url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertFalse(response.data["success"])
-
-    def test_list_and_filter_role_permissions(self):
-        RolePermission.objects.create(role=self.role, permission=self.permission1)
-        RolePermission.objects.create(role=self.role, permission=self.permission2)
-
-        # List all
-        res = self.client.get(self.list_create_url)
-        self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertTrue(res.data["success"])
-        self.assertEqual(res.data["data"]["pagination"]["total_items"], 2)
-
-        # Filter by role
-        res_role = self.client.get(f"{self.list_create_url}?role={self.role.id}")
-        self.assertEqual(res_role.status_code, status.HTTP_200_OK)
-        self.assertEqual(res_role.data["data"]["pagination"]["total_items"], 2)
-
-        # Filter by permission
-        res_perm = self.client.get(f"{self.list_create_url}?permission={self.permission1.id}")
-        self.assertEqual(res_perm.status_code, status.HTTP_200_OK)
-        self.assertEqual(res_perm.data["data"]["pagination"]["total_items"], 1)
-
-    def test_role_permission_detail_and_delete(self):
-        rp = RolePermission.objects.create(role=self.role, permission=self.permission1)
-        detail_url = reverse("role-permission-detail", kwargs={"pk": rp.pk})
-
-        # GET detail
-        get_res = self.client.get(detail_url)
-        self.assertEqual(get_res.status_code, status.HTTP_200_OK)
-        self.assertEqual(get_res.data["data"]["permission_name"], "company.create")
-
-        # DELETE
-        del_res = self.client.delete(detail_url)
-        self.assertEqual(del_res.status_code, status.HTTP_200_OK)
-        self.assertFalse(RolePermission.objects.filter(pk=rp.pk).exists())
 
 
 class RolePermissionSetApiTests(APITestCase):

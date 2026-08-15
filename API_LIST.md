@@ -12,14 +12,13 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 | 2 | **Company** | `company` | `/api/company/` | 6 |
 | 3 | **Department** | `department` | `/api/department/` | 6 |
 | 4 | **Role** | `role` | `/api/role/` | 6 |
-| 5 | **RolePermission** | `role` | `/api/role/permissions/` | 6 |
-| 6 | **Permission** | `permission` | `/api/permission/` | 6 |
-| 7 | **Project** | `project` | `/api/project/` | 6 |
-| 8 | **Designation** | `designation` | `/api/designation/` | 6 |
-| 9 | **Employee** | `employee` | `/api/employee/` | 6 |
-| 10 | **PermissionSet** | `permission_set` | `/api/permission-set/` | 6 |
-| 11 | **PermissionSetPermission** | `permission_set` | `/api/permission-set/permissions/` | 6 |
-| **Total** | **11 Models** | | | **73 Endpoints** |
+| 5 | **Permission** | `permission` | `/api/permission/` | 6 |
+| 6 | **Project** | `project` | `/api/project/` | 6 |
+| 7 | **Designation** | `designation` | `/api/designation/` | 6 |
+| 8 | **Employee** | `employee` | `/api/employee/` | 6 |
+| 9 | **PermissionSet** | `permission_set` | `/api/permission-set/` | 6 |
+| 10 | **PermissionSetPermission** | `permission_set` | `/api/permission-set/permissions/` | 6 |
+| **Total** | **10 Models** | | | **67 Endpoints** |
 
 ---
 
@@ -28,13 +27,12 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 2. [Company Model APIs](#2-company-model-apis)
 3. [Department Model APIs](#3-department-model-apis)
 4. [Role Model APIs](#4-role-model-apis)
-5. [RolePermission Model APIs](#5-rolepermission-model-apis)
-6. [Permission Model APIs](#6-permission-model-apis)
-7. [Project Model APIs](#7-project-model-apis)
-8. [Designation Model APIs](#8-designation-model-apis)
-9. [Employee Model APIs](#9-employee-model-apis)
-10. [PermissionSet Model APIs](#10-permissionset-model-apis)
-11. [PermissionSetPermission Model APIs](#11-permissionsetpermission-model-apis)
+5. [Permission Model APIs](#5-permission-model-apis)
+6. [Project Model APIs](#6-project-model-apis)
+7. [Designation Model APIs](#7-designation-model-apis)
+8. [Employee Model APIs](#8-employee-model-apis)
+9. [PermissionSet Model APIs](#9-permissionset-model-apis)
+10. [PermissionSetPermission Model APIs](#10-permissionsetpermission-model-apis)
 
 ---
 
@@ -335,68 +333,6 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Deletes a role record by ID. Protected against deletion if the role is currently assigned to users.
 * **Response Status**: `200 OK` (or `400 Bad Request` if protected)
-
----
-
-## 5. RolePermission Model APIs
-
-**App**: `role`  
-**Model**: `RolePermission` (`role/models.py`)  
-**Base Path**: `/api/role/permissions/`  
-**Description**: Manages foreign key mapping records linking Role entities to specific Permission entities (`role`, `permission`).
-
-### Endpoints List
-
-#### 5.1. List Role Permissions
-* **Method**: `GET`
-* **URL Path**: `/api/role/permissions/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Retrieves paginated role-permission mappings with filters for role ID and permission ID.
-* **Query Parameters**:
-  * `role` *(optional)*: Filter by Role ID.
-  * `permission` *(optional)*: Filter by Permission ID.
-  * `search` *(optional)*: Filter by role name, permission name, resource, or action.
-  * `page` *(optional)*: Page number.
-  * `page_size` *(optional)*: Page size (default: 10).
-* **Response Status**: `200 OK`
-
-#### 5.2. Assign Permission to Role (Create)
-* **Method**: `POST`
-* **URL Path**: `/api/role/permissions/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Creates a new role permission assignment. Enforces unique constraint between role and permission.
-* **Request Body**: `role`, `permission`
-* **Response Status**: `201 Created`
-
-#### 5.3. Get Role Permission Details
-* **Method**: `GET`
-* **URL Path**: `/api/role/permissions/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Retrieves details of a single role permission mapping by ID.
-* **Response Status**: `200 OK`
-
-#### 5.4. Update Role Permission (Full - PUT)
-* **Method**: `PUT`
-* **URL Path**: `/api/role/permissions/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Completely updates a role permission record.
-* **Request Body**: `role`, `permission`
-* **Response Status**: `200 OK`
-
-#### 5.5. Update Role Permission (Partial - PATCH)
-* **Method**: `PATCH`
-* **URL Path**: `/api/role/permissions/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Partially updates a role permission mapping record.
-* **Request Body**: `role` or `permission`
-* **Response Status**: `200 OK`
-
-#### 5.6. Delete Role Permission
-* **Method**: `DELETE`
-* **URL Path**: `/api/role/permissions/{id}/`
-* **Authentication**: Required (`IsAuthenticated`)
-* **Description**: Revokes a permission from a role by deleting the mapping entry.
-* **Response Status**: `200 OK`
 
 ---
 
