@@ -1,5 +1,6 @@
 from django.db import models
 from company.models import Company
+from permission_set.models import PermissionSet
 
 
 class Designation(models.Model):
@@ -29,3 +30,26 @@ class Designation(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+
+
+class DesignationPermissionSet(models.Model):
+    designation = models.ForeignKey(
+        Designation,
+        on_delete=models.CASCADE,
+        related_name='designation_permission_sets'
+    )
+    permission_set = models.ForeignKey(
+        PermissionSet,
+        on_delete=models.CASCADE,
+        related_name='designation_permission_sets'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Designation Permission Sets"
+        unique_together = ('designation', 'permission_set')
+
+    def __str__(self):
+        return f"{self.designation.name} - {self.permission_set.name}"
+

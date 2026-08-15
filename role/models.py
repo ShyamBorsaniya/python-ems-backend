@@ -1,5 +1,6 @@
 from django.db import models
 from permission.models import Permission
+from permission_set.models import PermissionSet
 
 
 class Role(models.Model):
@@ -37,5 +38,28 @@ class RolePermission(models.Model):
 
     def __str__(self):
         return f"{self.role.name} - {self.permission.name}"
+
+
+class RolePermissionSet(models.Model):
+    role = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name='role_permission_sets'
+    )
+    permission_set = models.ForeignKey(
+        PermissionSet,
+        on_delete=models.CASCADE,
+        related_name='role_permission_sets'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name_plural = "Role Permission Sets"
+        unique_together = ('role', 'permission_set')
+
+    def __str__(self):
+        return f"{self.role.name} - {self.permission_set.name}"
+
 
 

@@ -4,8 +4,9 @@ from rest_framework.test import APITestCase, APIClient
 from user.models import User
 from company.models import Company
 from module.models import Module
-from role.models import Role, RolePermission
+from role.models import Role, RolePermission, RolePermissionSet
 from permission.models import Permission
+from permission_set.models import PermissionSet
 
 
 class RoleApiTests(APITestCase):
@@ -263,3 +264,66 @@ class RolePermissionApiTests(APITestCase):
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(RolePermission.objects.filter(pk=rp.pk).exists())
+
+
+class RolePermissionSetApiTests(APITestCase):
+
+    def setUp(self):
+        self.company = Company.objects.create(name="Tech Corp", code="TECH01")
+        self.role = Role.objects.create(name="HR Manager", display_name="HR Manager")
+        self.permission_set = PermissionSet.objects.create(
+            company=self.company,
+            name="HR Kit",
+            display_name="HR Kit",
+            code="ps_hr"
+        )
+        self.user = User.objects.create_user(
+            username="testuser",
+            email="user@techcorp.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company
+        )
+        self.client.force_authenticate(user=self.user)
+        self.list_create_url = reverse("role-permission-set-list-create")
+
+    def test_assign_permission_set_to_role(self):
+        payload = {
+            "role": self.role.id,
+            "permission_set": self.permission_set.id
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["data"]["permission_set"]["id"], self.permission_set.id)
+
+    def test_duplicate_permission_set_assignment(self):
+        RolePermissionSet.objects.create(role=self.role, permission_set=self.permission_set)
+        payload = {
+            "role": self.role.id,
+            "permission_set": self.permission_set.id
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_list_and_filter_role_permission_sets(self):
+        RolePermissionSet.objects.create(role=self.role, permission_set=self.permission_set)
+        res = self.client.get(self.list_create_url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data["data"]["pagination"]["total_items"], 1)
+
+        res_filtered = self.client.get(f"{self.list_create_url}?role={self.role.id}")
+        self.assertEqual(res_filtered.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res_filtered.data["data"]["results"]), 1)
+
+    def test_role_permission_set_detail_and_delete(self):
+        rps = RolePermissionSet.objects.create(role=self.role, permission_set=self.permission_set)
+        detail_url = reverse("role-permission-set-detail", kwargs={"pk": rps.pk})
+
+        get_res = self.client.get(detail_url)
+        self.assertEqual(get_res.status_code, status.HTTP_200_OK)
+
+        del_res = self.client.delete(detail_url)
+        self.assertEqual(del_res.status_code, status.HTTP_200_OK)
+        self.assertFalse(RolePermissionSet.objects.filter(pk=rps.pk).exists())
+

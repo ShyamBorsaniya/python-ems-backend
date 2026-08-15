@@ -5,7 +5,8 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from company.models import Company
 from role.models import Role
-from .models import Department
+from .models import Department, DepartmentPermissionSet
+from permission_set.models import PermissionSet
 
 User = get_user_model()
 
@@ -189,3 +190,51 @@ class DepartmentAPITest(TestCase):
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Department.objects.filter(pk=self.department.pk).exists())
+
+
+class DepartmentPermissionSetAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.company = Company.objects.create(name="Acme Inc", code="ACME")
+        self.role = Role.objects.create(name="Admin Role")
+        self.user = User.objects.create_user(
+            username="testuser",
+            password="testpassword123",
+            email="user@example.com",
+            role=self.role,
+            company=self.company
+        )
+        self.client.force_authenticate(user=self.user)
+        self.department = Department.objects.create(company=self.company, name="Engineering", code="ENG")
+        self.permission_set = PermissionSet.objects.create(company=self.company, name="Eng Kit", code="ps_eng")
+        self.list_create_url = reverse("department-permission-set-list-create")
+
+    def test_assign_permission_set_to_department(self):
+        payload = {
+            "department": self.department.id,
+            "permission_set": self.permission_set.id
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data["success"])
+
+    def test_duplicate_department_permission_set(self):
+        DepartmentPermissionSet.objects.create(department=self.department, permission_set=self.permission_set)
+        payload = {
+            "department": self.department.id,
+            "permission_set": self.permission_set.id
+        }
+        response = self.client.post(self.list_create_url, payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_list_and_detail_department_permission_set(self):
+        dps = DepartmentPermissionSet.objects.create(department=self.department, permission_set=self.permission_set)
+        response = self.client.get(self.list_create_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["data"]["results"]), 1)
+
+        detail_url = reverse("department-permission-set-detail", kwargs={"pk": dps.pk})
+        del_res = self.client.delete(detail_url)
+        self.assertEqual(del_res.status_code, status.HTTP_200_OK)
+        self.assertFalse(DepartmentPermissionSet.objects.filter(pk=dps.pk).exists())
+
