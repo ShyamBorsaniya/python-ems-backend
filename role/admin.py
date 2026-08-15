@@ -18,7 +18,7 @@ class RoleAdmin(admin.ModelAdmin):
 @admin.register(RolePermission)
 class RolePermissionAdmin(admin.ModelAdmin):
     list_display = ('id', 'role', 'permission', 'created_at', 'updated_at')
-    search_fields = ('role__name', 'permission__name', 'permission__resource', 'permission__action')
+    search_fields = ('role__name', 'permission__name', 'permission__display_name', 'permission__code', 'permission__action')
     list_filter = ('created_at',)
 
 

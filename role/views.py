@@ -174,7 +174,8 @@ class RolePermissionListCreateView(APIView):
             role_permissions = role_permissions.filter(
                 Q(role__name__icontains=search_query) |
                 Q(permission__name__icontains=search_query) |
-                Q(permission__resource__icontains=search_query) |
+                Q(permission__display_name__icontains=search_query) |
+                Q(permission__code__icontains=search_query) |
                 Q(permission__action__icontains=search_query)
             )
 

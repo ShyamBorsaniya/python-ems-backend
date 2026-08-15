@@ -1,10 +1,25 @@
 from django.db import models
+from company.models import Company
+from module.models import Module
 
 
 class Permission(models.Model):
-    name = models.CharField(max_length=255, blank=True)
-    resource = models.CharField(max_length=255)
-    action = models.CharField(max_length=255)
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name='permissions',
+        null=True,
+        blank=True
+    )
+    module = models.ForeignKey(
+        Module,
+        on_delete=models.CASCADE,
+        related_name='permissions'
+    )
+    name = models.CharField(max_length=100)
+    display_name = models.CharField(max_length=100)
+    code = models.CharField(max_length=100)
+    action = models.CharField(max_length=50)
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -12,12 +27,8 @@ class Permission(models.Model):
     class Meta:
         ordering = ['-created_at']
         verbose_name_plural = "Permissions"
-        unique_together = ('resource', 'action')
-
-    def save(self, *args, **kwargs):
-        if not self.name and self.resource and self.action:
-            self.name = f"{self.resource.strip().lower()}.{self.action.strip().lower()}"
-        super().save(*args, **kwargs)
+        unique_together = ['module', 'code']
 
     def __str__(self):
-        return self.name or f"{self.resource}.{self.action}"
+        return f"{self.display_name} ({self.code})"
+

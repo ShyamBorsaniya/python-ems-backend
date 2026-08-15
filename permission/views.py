@@ -33,22 +33,32 @@ class PermissionListCreateView(APIView):
     def get(self, request):
         permissions = Permission.objects.all()
         search_query = request.query_params.get("search", None)
-        resource_param = request.query_params.get("resource", None)
+        company_param = request.query_params.get("company", None)
+        module_param = request.query_params.get("module", None)
         action_param = request.query_params.get("action", None)
+        code_param = request.query_params.get("code", None)
 
         if search_query:
             permissions = permissions.filter(
                 Q(name__icontains=search_query) |
-                Q(resource__icontains=search_query) |
+                Q(display_name__icontains=search_query) |
+                Q(code__icontains=search_query) |
                 Q(action__icontains=search_query) |
-                Q(description__icontains=search_query)
+                Q(description__icontains=search_query) |
+                Q(module__name__icontains=search_query)
             )
 
-        if resource_param:
-            permissions = permissions.filter(resource__iexact=resource_param)
+        if company_param:
+            permissions = permissions.filter(company_id=company_param)
+
+        if module_param:
+            permissions = permissions.filter(module_id=module_param)
 
         if action_param:
             permissions = permissions.filter(action__iexact=action_param)
+
+        if code_param:
+            permissions = permissions.filter(code__iexact=code_param)
 
         page_size_param = request.query_params.get("page_size", None)
         if page_size_param:

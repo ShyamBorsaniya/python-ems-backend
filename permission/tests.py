@@ -2,6 +2,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from user.models import User
+from company.models import Company
+from module.models import Module
 from permission.models import Permission
 
 
@@ -14,9 +16,22 @@ class PermissionApiTests(APITestCase):
             password="Password123!"
         )
         self.client.force_authenticate(user=self.user)
+        self.company = Company.objects.create(
+            name="Test Company",
+            code="TESTCO"
+        )
+        self.module = Module.objects.create(
+            company=self.company,
+            name="Project Module",
+            display_name="Project Module",
+            code="proj_mod"
+        )
         self.permission = Permission.objects.create(
+            company=self.company,
+            module=self.module,
             name="project.create",
-            resource="project",
+            display_name="Create Project",
+            code="project:create",
             action="create",
             description="Allows creating projects"
         )
@@ -36,7 +51,11 @@ class PermissionApiTests(APITestCase):
         # Create 11 more permissions (12 total)
         for i in range(11):
             Permission.objects.create(
-                resource=f"resource_{i}",
+                company=self.company,
+                module=self.module,
+                name=f"permission_{i}",
+                display_name=f"Permission {i}",
+                code=f"code_{i}",
                 action="read",
                 description=f"Description {i}"
             )
@@ -59,7 +78,10 @@ class PermissionApiTests(APITestCase):
     def test_list_permissions_custom_page_size(self):
         for i in range(3):
             Permission.objects.create(
-                resource=f"custom_{i}",
+                module=self.module,
+                name=f"custom_{i}",
+                display_name=f"Custom {i}",
+                code=f"custom_code_{i}",
                 action="update"
             )
         response = self.client.get(f"{self.list_create_url}?page_size=2")
@@ -67,16 +89,20 @@ class PermissionApiTests(APITestCase):
         self.assertEqual(len(response.data["data"]["results"]), 2)
         self.assertEqual(response.data["data"]["pagination"]["page_size"], 2)
 
-    def test_filter_permissions_by_search_resource_and_action(self):
+    def test_filter_permissions_by_search_module_and_action(self):
         Permission.objects.create(
+            module=self.module,
             name="task.read",
-            resource="task",
+            display_name="Read Task",
+            code="task:read",
             action="read",
             description="View tasks"
         )
         Permission.objects.create(
+            module=self.module,
             name="task.delete",
-            resource="task",
+            display_name="Delete Task",
+            code="task:delete",
             action="delete",
             description="Remove tasks"
         )
@@ -87,10 +113,10 @@ class PermissionApiTests(APITestCase):
         self.assertEqual(len(res_search.data["data"]["results"]), 1)
         self.assertEqual(res_search.data["data"]["results"][0]["name"], "task.read")
 
-        # Resource filter
-        res_resource = self.client.get(f"{self.list_create_url}?resource=task")
-        self.assertEqual(res_resource.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(res_resource.data["data"]["results"]), 2)
+        # Module filter
+        res_module = self.client.get(f"{self.list_create_url}?module={self.module.id}")
+        self.assertEqual(res_module.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(res_module.data["data"]["results"]), 3)
 
         # Action filter
         res_action = self.client.get(f"{self.list_create_url}?action=delete")
@@ -98,10 +124,13 @@ class PermissionApiTests(APITestCase):
         self.assertEqual(len(res_action.data["data"]["results"]), 1)
         self.assertEqual(res_action.data["data"]["results"][0]["name"], "task.delete")
 
-    def test_create_permission_explicit_name(self):
+    def test_create_permission_success(self):
         payload = {
+            "company": self.company.id,
+            "module": self.module.id,
             "name": "task.create",
-            "resource": "task",
+            "display_name": "Create Task",
+            "code": "task:create",
             "action": "create",
             "description": "Create new tasks"
         }
@@ -109,28 +138,21 @@ class PermissionApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data["success"])
         self.assertEqual(response.data["data"]["name"], "task.create")
-        self.assertEqual(response.data["data"]["resource"], "task")
+        self.assertEqual(response.data["data"]["display_name"], "Create Task")
+        self.assertEqual(response.data["data"]["code"], "task:create")
         self.assertEqual(response.data["data"]["action"], "create")
-
-    def test_create_permission_auto_generated_name(self):
-        payload = {
-            "resource": "department",
-            "action": "update",
-            "description": "Update department details"
-        }
-        response = self.client.post(self.list_create_url, payload, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["data"]["name"], "department.update")
 
     def test_create_permission_validation_error(self):
         payload = {
-            "resource": "",
+            "name": "task.create",
+            "display_name": "",
+            "code": "",
             "action": "create"
         }
         response = self.client.post(self.list_create_url, payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
-        self.assertIn("resource", response.data["errors"])
+        self.assertIn("module", response.data["errors"])
 
     def test_permission_detail_get_put_patch_delete(self):
         detail_url = reverse("permission-detail", kwargs={"pk": self.permission.pk})
@@ -142,14 +164,18 @@ class PermissionApiTests(APITestCase):
 
         # PUT update
         put_payload = {
+            "company": self.company.id,
+            "module": self.module.id,
             "name": "project.write",
-            "resource": "project",
+            "display_name": "Write Project",
+            "code": "project:write",
             "action": "write",
             "description": "Updated project write"
         }
         put_res = self.client.put(detail_url, put_payload, format="json")
         self.assertEqual(put_res.status_code, status.HTTP_200_OK)
         self.assertEqual(put_res.data["data"]["name"], "project.write")
+        self.assertEqual(put_res.data["data"]["code"], "project:write")
         self.assertEqual(put_res.data["data"]["action"], "write")
 
         # PATCH update
@@ -164,4 +190,5 @@ class PermissionApiTests(APITestCase):
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(Permission.objects.filter(pk=self.permission.pk).exists())
+
 

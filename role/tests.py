@@ -3,6 +3,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from user.models import User
 from company.models import Company
+from module.models import Module
 from role.models import Role, RolePermission
 from permission.models import Permission
 
@@ -174,13 +175,25 @@ class RolePermissionApiTests(APITestCase):
             name="HR Manager",
             display_name="HR Manager role"
         )
+        self.module = Module.objects.create(
+            company=self.company,
+            name="Company Module",
+            display_name="Company Module",
+            code="company_mod"
+        )
         self.permission1 = Permission.objects.create(
-            resource="company",
+            module=self.module,
+            name="company.create",
+            display_name="Create Company",
+            code="company:create",
             action="create",
             description="Create company"
         )
         self.permission2 = Permission.objects.create(
-            resource="company",
+            module=self.module,
+            name="company.read",
+            display_name="Read Company",
+            code="company:read",
             action="read",
             description="Read company"
         )
