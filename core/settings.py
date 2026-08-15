@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "permission",
     "project",
     "employee",
+    "module",
 ]
 
 MIDDLEWARE = [
