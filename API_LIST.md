@@ -17,7 +17,9 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 | 7 | **Project** | `project` | `/api/project/` | 6 |
 | 8 | **Designation** | `designation` | `/api/designation/` | 6 |
 | 9 | **Employee** | `employee` | `/api/employee/` | 6 |
-| **Total** | **9 Models** | | | **61 Endpoints** |
+| 10 | **PermissionSet** | `permission_set` | `/api/permission-set/` | 6 |
+| 11 | **PermissionSetPermission** | `permission_set` | `/api/permission-set/permissions/` | 6 |
+| **Total** | **11 Models** | | | **73 Endpoints** |
 
 ---
 
@@ -31,6 +33,8 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 7. [Project Model APIs](#7-project-model-apis)
 8. [Designation Model APIs](#8-designation-model-apis)
 9. [Employee Model APIs](#9-employee-model-apis)
+10. [PermissionSet Model APIs](#10-permissionset-model-apis)
+11. [PermissionSetPermission Model APIs](#11-permissionsetpermission-model-apis)
 
 ---
 
@@ -648,4 +652,130 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Permanently deletes an employee profile by ID.
 * **Response Status**: `200 OK`
+
+---
+
+## 10. PermissionSet Model APIs
+
+**App**: `permission_set`  
+**Model**: `PermissionSet` (`permission_set/models.py`)  
+**Base Path**: `/api/permission-set/` (or `/api/permission-sets/`)  
+**Description**: Manages logical groupings of permissions (e.g., "Standard Manager Kit", "HR Administrator Suite") with support for default global templates (`company=null`) and tenant-specific permission sets.
+
+### Endpoints List
+
+#### 10.1. List Permission Sets
+* **Method**: `GET`
+* **URL Path**: `/api/permission-set/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves a paginated list of permission sets with support for full-text search and filtering by company or code.
+* **Query Parameters**:
+  * `search` *(optional)*: Search term across `name`, `display_name`, `code`, and `description`.
+  * `company` *(optional)*: Filter by Company ID, or `null` for global templates.
+  * `code` *(optional)*: Filter by exact permission set code.
+  * `page` *(optional)*: Page number for pagination (default: 1, page size: 10).
+  * `page_size` *(optional)*: Number of items per page.
+* **Response Status**: `200 OK`
+
+#### 10.2. Create Permission Set
+* **Method**: `POST`
+* **URL Path**: `/api/permission-set/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Creates a new permission set record. Enforces unique constraint on `(company, code)`.
+* **Request Body**: `name`, `display_name`, `code`, `company` *(optional)*, `description` *(optional)*
+* **Response Status**: `201 Created`
+
+#### 10.3. Get Permission Set Details
+* **Method**: `GET`
+* **URL Path**: `/api/permission-set/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves complete details of a specific permission set by primary key ID.
+* **Response Status**: `200 OK`
+
+#### 10.4. Update Permission Set (Full - PUT)
+* **Method**: `PUT`
+* **URL Path**: `/api/permission-set/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Replaces all fields of an existing permission set record.
+* **Request Body**: `name`, `display_name`, `code`, `company` *(optional)*, `description` *(optional)*
+* **Response Status**: `200 OK`
+
+#### 10.5. Update Permission Set (Partial - PATCH)
+* **Method**: `PATCH`
+* **URL Path**: `/api/permission-set/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Partially updates specified attributes of a permission set record.
+* **Request Body**: Any subset of `PermissionSet` fields.
+* **Response Status**: `200 OK`
+
+#### 10.6. Delete Permission Set
+* **Method**: `DELETE`
+* **URL Path**: `/api/permission-set/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Permanently deletes a permission set record by ID.
+* **Response Status**: `200 OK`
+
+---
+
+## 11. PermissionSetPermission Model APIs
+
+**App**: `permission_set`  
+**Model**: `PermissionSetPermission` (`permission_set/models.py`)  
+**Base Path**: `/api/permission-set/permissions/` (or `/api/permission-sets/permissions/`)  
+**Description**: Manages junction table mappings that bind Permissions into Permission Sets (Many-to-Many relationship).
+
+### Endpoints List
+
+#### 11.1. List Permission Set Permissions
+* **Method**: `GET`
+* **URL Path**: `/api/permission-set/permissions/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves a paginated list of permission set permission assignments with support for search and filtering.
+* **Query Parameters**:
+  * `search` *(optional)*: Search term across permission set name/code or permission name/code.
+  * `permission_set` *(optional)*: Filter by Permission Set ID.
+  * `permission` *(optional)*: Filter by Permission ID.
+  * `page` *(optional)*: Page number for pagination (default: 1, page size: 10).
+  * `page_size` *(optional)*: Number of items per page.
+* **Response Status**: `200 OK`
+
+#### 11.2. Create Permission Set Permission Mapping
+* **Method**: `POST`
+* **URL Path**: `/api/permission-set/permissions/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Binds a Permission to a PermissionSet. Enforces unique constraint on `(permission_set_id, permission_id)`.
+* **Request Body**: `permission_set`, `permission`
+* **Response Status**: `201 Created`
+
+#### 11.3. Get Permission Set Permission Mapping Details
+* **Method**: `GET`
+* **URL Path**: `/api/permission-set/permissions/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves complete details of a specific permission set permission assignment by primary key ID.
+* **Response Status**: `200 OK`
+
+#### 11.4. Update Permission Set Permission Mapping (Full - PUT)
+* **Method**: `PUT`
+* **URL Path**: `/api/permission-set/permissions/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Replaces an existing permission set permission assignment.
+* **Request Body**: `permission_set`, `permission`
+* **Response Status**: `200 OK`
+
+#### 11.5. Update Permission Set Permission Mapping (Partial - PATCH)
+* **Method**: `PATCH`
+* **URL Path**: `/api/permission-set/permissions/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Partially updates specified attributes of a permission set permission assignment.
+* **Request Body**: Any subset of `PermissionSetPermission` fields.
+* **Response Status**: `200 OK`
+
+#### 11.6. Delete Permission Set Permission Mapping
+* **Method**: `DELETE`
+* **URL Path**: `/api/permission-set/permissions/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Removes a permission assignment from a permission set by ID.
+* **Response Status**: `200 OK`
+
+
 
