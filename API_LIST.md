@@ -14,11 +14,12 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 | 4 | **Role** | `role` | `/api/role/` | 6 |
 | 5 | **Permission** | `permission` | `/api/permission/` | 6 |
 | 6 | **Project** | `project` | `/api/project/` | 6 |
-| 7 | **Designation** | `designation` | `/api/designation/` | 6 |
-| 8 | **Employee** | `employee` | `/api/employee/` | 6 |
-| 9 | **PermissionSet** | `permission_set` | `/api/permission-set/` | 6 |
-| 10 | **PermissionSetPermission** | `permission_set` | `/api/permission-set/permissions/` | 6 |
-| **Total** | **10 Models** | | | **67 Endpoints** |
+| 7 | **ProjectMember** | `project` | `/api/project/members/` | 6 |
+| 8 | **Designation** | `designation` | `/api/designation/` | 6 |
+| 9 | **Employee** | `employee` | `/api/employee/` | 6 |
+| 10 | **PermissionSet** | `permission_set` | `/api/permission-set/` | 6 |
+| 11 | **PermissionSetPermission** | `permission_set` | `/api/permission-set/permissions/` | 6 |
+| **Total** | **11 Models** | | | **73 Endpoints** |
 
 ---
 
@@ -29,10 +30,11 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 4. [Role Model APIs](#4-role-model-apis)
 5. [Permission Model APIs](#5-permission-model-apis)
 6. [Project Model APIs](#6-project-model-apis)
-7. [Designation Model APIs](#7-designation-model-apis)
-8. [Employee Model APIs](#8-employee-model-apis)
-9. [PermissionSet Model APIs](#9-permissionset-model-apis)
-10. [PermissionSetPermission Model APIs](#10-permissionsetpermission-model-apis)
+7. [ProjectMember Model APIs](#7-projectmember-model-apis)
+8. [Designation Model APIs](#8-designation-model-apis)
+9. [Employee Model APIs](#9-employee-model-apis)
+10. [PermissionSet Model APIs](#10-permissionset-model-apis)
+11. [PermissionSetPermission Model APIs](#11-permissionsetpermission-model-apis)
 
 ---
 
@@ -457,6 +459,69 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **URL Path**: `/api/project/{id}/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Permanently deletes a project record by ID.
+* **Response Status**: `200 OK`
+
+---
+
+## 7. ProjectMember Model APIs
+
+**App**: `project`  
+**Model**: `ProjectMember` (`project/models.py`)  
+**Base Path**: `/api/project/members/`  
+**Description**: Manages membership records linking Employees to Projects (`project`, `employee`, `role_in_project`, `assigned_at`, `removed_at`).
+
+### Endpoints List
+
+#### 7.1. List Project Members
+* **Method**: `GET`
+* **URL Path**: `/api/project/members/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves paginated project member records with filters for project ID, employee ID, role in project, and search query.
+* **Query Parameters**:
+  * `project` *(optional)*: Filter by Project ID.
+  * `employee` *(optional)*: Filter by Employee ID.
+  * `role` *(optional)*: Filter by role in project.
+  * `search` *(optional)*: Filter by project name/code, employee name, or role.
+  * `page` *(optional)*: Page number.
+  * `page_size` *(optional)*: Page size (default: 10).
+* **Response Status**: `200 OK`
+
+#### 7.2. Create Project Member
+* **Method**: `POST`
+* **URL Path**: `/api/project/members/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Adds an employee to a project as a member. Enforces unique constraint per project-employee pair.
+* **Request Body**: `project`, `employee`, `role_in_project` *(optional)*, `assigned_at` *(optional)*, `removed_at` *(optional)*
+* **Response Status**: `201 Created`
+
+#### 7.3. Get Project Member Details
+* **Method**: `GET`
+* **URL Path**: `/api/project/members/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves details of a specific project member record by ID.
+* **Response Status**: `200 OK`
+
+#### 7.4. Update Project Member (Full - PUT)
+* **Method**: `PUT`
+* **URL Path**: `/api/project/members/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Fully updates a project member record.
+* **Request Body**: `project`, `employee`, `role_in_project`, `assigned_at`, `removed_at`
+* **Response Status**: `200 OK`
+
+#### 7.5. Update Project Member (Partial - PATCH)
+* **Method**: `PATCH`
+* **URL Path**: `/api/project/members/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Partially updates a project member record.
+* **Request Body**: Partial fields of `ProjectMember`.
+* **Response Status**: `200 OK`
+
+#### 7.6. Delete Project Member
+* **Method**: `DELETE`
+* **URL Path**: `/api/project/members/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Removes a member record from a project by ID.
 * **Response Status**: `200 OK`
 
 ---

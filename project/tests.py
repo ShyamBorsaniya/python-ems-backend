@@ -5,7 +5,8 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from company.models import Company
 from role.models import Role
-from project.models import Project, ProjectStatus, ProjectPriority
+from employee.models import Employee
+from project.models import Project, ProjectStatus, ProjectPriority, ProjectMember
 
 User = get_user_model()
 
@@ -119,3 +120,104 @@ class ProjectAPITest(TestCase):
         response = self.client.delete(self.detail_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Project.objects.filter(pk=self.project.pk).exists())
+
+
+class ProjectMemberAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.company = Company.objects.create(
+            name="Gamma Corp",
+            code="GAMMA",
+            email="gamma@example.com"
+        )
+        self.role = Role.objects.create(name="Dev Lead")
+        self.user = User.objects.create_user(
+            username="assignuser",
+            password="password123",
+            email="auser@example.com",
+            role=self.role,
+            company=self.company
+        )
+        self.emp_user = User.objects.create_user(
+            username="employeeuser",
+            password="password123",
+            email="emp@example.com",
+            role=self.role,
+            company=self.company
+        )
+        self.employee = Employee.objects.create(
+            user=self.emp_user,
+            employee_id="EMP-001",
+            first_name="Jane",
+            last_name="Doe",
+            work_email="jane.doe@example.com"
+        )
+        self.project = Project.objects.create(
+            company=self.company,
+            name="AI Platform",
+            code="AIP-100",
+            status=ProjectStatus.ACTIVE
+        )
+        self.client.force_authenticate(user=self.user)
+        self.list_create_url = reverse("project-member-list-create")
+
+    def test_create_project_member_success(self):
+        payload = {
+            "project": self.project.id,
+            "employee": self.employee.id,
+            "role_in_project": "Tech Lead"
+        }
+        response = self.client.post(self.list_create_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["data"]["role_in_project"], "Tech Lead")
+
+    def test_duplicate_project_member_fails(self):
+        ProjectMember.objects.create(
+            project=self.project,
+            employee=self.employee,
+            role_in_project="QA"
+        )
+        payload = {
+            "project": self.project.id,
+            "employee": self.employee.id,
+            "role_in_project": "Developer"
+        }
+        response = self.client.post(self.list_create_url, payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(response.data["success"])
+
+    def test_list_and_filter_project_members(self):
+        member = ProjectMember.objects.create(
+            project=self.project,
+            employee=self.employee,
+            role_in_project="Tech Lead"
+        )
+        response = self.client.get(f"{self.list_create_url}?project={self.project.id}")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["data"]["results"]), 1)
+        self.assertEqual(response.data["data"]["results"][0]["id"], member.id)
+
+    def test_retrieve_update_delete_project_member(self):
+        member = ProjectMember.objects.create(
+            project=self.project,
+            employee=self.employee,
+            role_in_project="Developer"
+        )
+        detail_url = reverse("project-member-detail", kwargs={"pk": member.pk})
+
+        # GET
+        get_res = self.client.get(detail_url)
+        self.assertEqual(get_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(get_res.data["data"]["role_in_project"], "Developer")
+
+        # PATCH
+        patch_res = self.client.patch(detail_url, {"role_in_project": "Senior Developer"})
+        self.assertEqual(patch_res.status_code, status.HTTP_200_OK)
+        self.assertEqual(patch_res.data["data"]["role_in_project"], "Senior Developer")
+
+        # DELETE
+        del_res = self.client.delete(detail_url)
+        self.assertEqual(del_res.status_code, status.HTTP_200_OK)
+        self.assertFalse(ProjectMember.objects.filter(pk=member.pk).exists())
+
