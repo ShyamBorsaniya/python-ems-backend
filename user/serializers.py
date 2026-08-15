@@ -18,16 +18,17 @@ class UserSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "phone",
-            "profile_image",
+            "profile_photo_url",
             "company",
             "role",
             "role_name",
             "status",
             "is_active",
+            "last_login_at",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "role_name"]
+        read_only_fields = ["id", "created_at", "updated_at", "role_name", "last_login_at"]
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
@@ -67,7 +68,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             "status",
         ]
         extra_kwargs = {
-            "status": {"required": False}
+            "status": {"required": False, "default": UserStatus.ACTIVE}
         }
 
     def create(self, validated_data):
@@ -116,11 +117,11 @@ class LoginSerializer(serializers.Serializer):
         if not user.is_active:
             raise serializers.ValidationError("your account has been inactivated please contact to admin")
 
-        if user.status == UserStatus.PENDING:
-            raise serializers.ValidationError("your account has been waiting to approval")
+        if user.status == UserStatus.INACTIVE:
+            raise serializers.ValidationError("your account has been inactivated please contact to admin")
 
-        if user.status == UserStatus.REJECTED:
-            raise serializers.ValidationError("your account has been terminited, contact to admin for ferther query")
+        if user.status == UserStatus.LOCKED:
+            raise serializers.ValidationError("your account has been locked, contact to admin for further query")
 
         attrs["user"] = user
         return attrs

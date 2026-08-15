@@ -43,14 +43,14 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["user"]["company"]["id"], self.company.id)
         self.assertEqual(response.data["data"]["user"]["company"]["name"], "Test Corp")
 
-    def test_user_registration_pending_status(self):
+    def test_user_registration_inactive_status(self):
         data = self.user_data.copy()
-        data["status"] = UserStatus.PENDING
+        data["status"] = UserStatus.INACTIVE
         response = self.client.post(self.register_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["status_code"], 201)
         self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["message"], "you are registered successfull please wait untill admin can approve")
+        self.assertEqual(response.data["message"], "you are registered successfully but your account is inactive, please wait until admin can activate it")
         self.assertNotIn("data", response.data)
 
     def test_user_registration_without_role_fails(self):
@@ -135,43 +135,43 @@ class UserAuthTests(APITestCase):
         self.assertIn("non_field_errors", response.data["errors"])
         self.assertIn("your account has been inactivated please contact to admin", response.data["errors"]["non_field_errors"])
 
-    def test_login_pending_user(self):
+    def test_login_inactive_user_status(self):
         User.objects.create_user(
-            username="pendinguser",
-            email="pending@example.com",
+            username="inactiveuser",
+            email="inactive@example.com",
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.PENDING
+            status=UserStatus.INACTIVE
         )
         login_payload = {
-            "username": "pendinguser",
+            "username": "inactiveuser",
             "password": "Password123!",
         }
         response = self.client.post(self.login_url, login_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("non_field_errors", response.data["errors"])
-        self.assertIn("your account has been waiting to approval", response.data["errors"]["non_field_errors"])
+        self.assertIn("your account has been inactivated please contact to admin", response.data["errors"]["non_field_errors"])
 
-    def test_login_rejected_user(self):
+    def test_login_locked_user(self):
         User.objects.create_user(
-            username="rejecteduser",
-            email="rejected@example.com",
+            username="lockeduser",
+            email="locked@example.com",
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.REJECTED
+            status=UserStatus.LOCKED
         )
         login_payload = {
-            "username": "rejecteduser",
+            "username": "lockeduser",
             "password": "Password123!",
         }
         response = self.client.post(self.login_url, login_payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("non_field_errors", response.data["errors"])
-        self.assertIn("your account has been terminited, contact to admin for ferther query", response.data["errors"]["non_field_errors"])
+        self.assertIn("your account has been locked, contact to admin for further query", response.data["errors"]["non_field_errors"])
 
     def test_list_users_unauthenticated(self):
         url = reverse("user-list")
@@ -355,7 +355,7 @@ class UserAuthTests(APITestCase):
     def test_user_default_status(self):
         response = self.client.post(self.register_url, self.user_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["data"]["user"]["status"], "approved")
+        self.assertEqual(response.data["data"]["user"]["status"], "active")
 
     def test_update_user_status(self):
         user = User.objects.create_user(
@@ -367,33 +367,33 @@ class UserAuthTests(APITestCase):
         )
         self.client.force_authenticate(user=user)
         url = reverse("user-detail", kwargs={"pk": user.pk})
-        response = self.client.patch(url, {"status": "rejected"}, format="json")
+        response = self.client.patch(url, {"status": "locked"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["status"], "rejected")
+        self.assertEqual(response.data["data"]["status"], "locked")
 
     def test_list_users_filter_by_status(self):
         user1 = User.objects.create_user(
-            username="user_pending",
-            email="pending@example.com",
+            username="user_inactive",
+            email="inactive@example.com",
             password="Password123!",
             role=self.role,
             company=self.company,
-            status="pending"
+            status="inactive"
         )
         user2 = User.objects.create_user(
-            username="user_approved",
-            email="approved@example.com",
+            username="user_active",
+            email="active@example.com",
             password="Password123!",
             role=self.role,
             company=self.company,
-            status="approved"
+            status="active"
         )
         self.client.force_authenticate(user=user2)
-        url = f"{reverse('user-list')}?status=pending"
+        url = f"{reverse('user-list')}?status=inactive"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["data"]["results"]), 1)
-        self.assertEqual(response.data["data"]["results"][0]["username"], "user_pending")
+        self.assertEqual(response.data["data"]["results"][0]["username"], "user_inactive")
 
     def test_get_company_pending_users(self):
         user_pending = User.objects.create_user(
@@ -402,7 +402,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.PENDING
+            status=UserStatus.INACTIVE
         )
         other_company = Company.objects.create(name="Other Corp", code="OTHER_CORP", email="other@test.com")
         User.objects.create_user(
@@ -411,7 +411,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=other_company,
-            status=UserStatus.PENDING
+            status=UserStatus.INACTIVE
         )
         auth_user = User.objects.create_user(
             username="admin_user",
@@ -419,7 +419,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.APPROVED
+            status=UserStatus.ACTIVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-pending-list")
@@ -442,7 +442,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.PENDING
+            status=UserStatus.INACTIVE
         )
         auth_user = User.objects.create_user(
             username="approver",
@@ -450,16 +450,16 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.APPROVED
+            status=UserStatus.ACTIVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-approve", kwargs={"pk": user_pending.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["data"]["status"], UserStatus.APPROVED)
+        self.assertEqual(response.data["data"]["status"], UserStatus.ACTIVE)
         user_pending.refresh_from_db()
-        self.assertEqual(user_pending.status, UserStatus.APPROVED)
+        self.assertEqual(user_pending.status, UserStatus.ACTIVE)
 
     def test_reject_user(self):
         user_pending = User.objects.create_user(
@@ -468,7 +468,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.PENDING
+            status=UserStatus.INACTIVE
         )
         auth_user = User.objects.create_user(
             username="rejector",
@@ -476,16 +476,16 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.APPROVED
+            status=UserStatus.ACTIVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-reject", kwargs={"pk": user_pending.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["data"]["status"], UserStatus.REJECTED)
+        self.assertEqual(response.data["data"]["status"], UserStatus.LOCKED)
         user_pending.refresh_from_db()
-        self.assertEqual(user_pending.status, UserStatus.REJECTED)
+        self.assertEqual(user_pending.status, UserStatus.LOCKED)
 
     def test_approve_reject_unauthenticated(self):
         url_approve = reverse("user-approve", kwargs={"pk": 1})

@@ -16,7 +16,8 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 | 6 | **Permission** | `permission` | `/api/permission/` | 6 |
 | 7 | **Project** | `project` | `/api/project/` | 6 |
 | 8 | **Designation** | `designation` | `/api/designation/` | 6 |
-| **Total** | **8 Models** | | | **55 Endpoints** |
+| 9 | **Employee** | `employee` | `/api/employee/` | 6 |
+| **Total** | **9 Models** | | | **61 Endpoints** |
 
 ---
 
@@ -29,6 +30,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 6. [Permission Model APIs](#6-permission-model-apis)
 7. [Project Model APIs](#7-project-model-apis)
 8. [Designation Model APIs](#8-designation-model-apis)
+9. [Employee Model APIs](#9-employee-model-apis)
 
 ---
 
@@ -537,6 +539,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Query Parameters**:
   * `search` *(optional)*: Filter by designation name, code, or description (case-insensitive).
   * `company` *(optional)*: Filter by Company ID (superusers can filter by any company, tenants are limited to their own company).
+  * `department` *(optional)*: Filter by Department ID.
   * `is_active` *(optional)*: Filter by active status (`true`/`false` or `1`/`0`).
   * `page` *(optional)*: Page number (default: 1).
   * `page_size` *(optional)*: Page size (default: 10).
@@ -547,7 +550,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **URL Path**: `/api/designation/`
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Creates a new designation record.
-* **Request Body**: `company` (ID), `name`, `code`, `description` *(optional)*, `is_active` *(optional, default: true)*
+* **Request Body**: `company` (ID), `department` *(optional ID)*, `name`, `code`, `description` *(optional)*, `is_active` *(optional, default: true)*
 * **Response Status**: `201 Created`
 
 #### 8.3. Get Designation Details
@@ -579,3 +582,70 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Authentication**: Required (`IsAuthenticated`)
 * **Description**: Permanently deletes a designation record by ID.
 * **Response Status**: `200 OK`
+
+---
+
+## 9. Employee Model APIs
+
+**App**: `employee`  
+**Model**: `Employee` (`employee/models.py`)  
+**Base Path**: `/api/employee/` (also aliased at `/api/employees/`)  
+**Description**: Extends User accounts with HR attributes, organizational positioning, personal details, contact information, and employment status.
+
+### Endpoints List
+
+#### 9.1. List Employees
+* **Method**: `GET`
+* **URL Path**: `/api/employee/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves a paginated list of employee records with optional search, company scope restriction, and multi-attribute filters.
+* **Query Parameters**:
+  * `search` *(optional)*: Search across employee code, username, first/last name, email, and emergency contact name.
+  * `company` *(optional)*: Filter by Company ID (automatically restricted if user belongs to a specific company).
+  * `department` *(optional)*: Filter by Department ID.
+  * `designation` *(optional)*: Filter by Designation ID.
+  * `employment_type` *(optional)*: Filter by employment type (`full_time`, `part_time`, `contract`, `intern`).
+  * `employment_status` *(optional)*: Filter by employment status (`active`, `on_leave`, `resigned`, `terminated`).
+  * `gender` *(optional)*: Filter by gender (`male`, `female`, `other`, `prefer_not_to_say`).
+  * `page` *(optional)*: Page number for pagination (default: 1).
+  * `page_size` *(optional)*: Page size for pagination (default: 10).
+* **Response Status**: `200 OK`
+
+#### 9.2. Create Employee Profile
+* **Method**: `POST`
+* **URL Path**: `/api/employee/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Creates a new employee profile linked to an existing User account and Company.
+* **Request Body**: `user` (ID), `company` (ID), `code`, `joining_date`, `department` *(optional)*, `designation` *(optional)*, `employment_type` *(optional)*, `employment_status` *(optional, default: 'active')*, `date_of_birth` *(optional)*, `gender` *(optional)*, `address` *(optional)*, `emergency_contact_name` *(optional)*, `emergency_contact_phone` *(optional)*
+* **Response Status**: `201 Created`
+
+#### 9.3. Get Employee Details
+* **Method**: `GET`
+* **URL Path**: `/api/employee/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Retrieves detailed HR profile information for a specific employee by primary key ID.
+* **Response Status**: `200 OK`
+
+#### 9.4. Update Employee Profile (Full - PUT)
+* **Method**: `PUT`
+* **URL Path**: `/api/employee/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Replaces all fields of an existing employee profile.
+* **Request Body**: Complete `Employee` field payload.
+* **Response Status**: `200 OK`
+
+#### 9.5. Update Employee Profile (Partial - PATCH)
+* **Method**: `PATCH`
+* **URL Path**: `/api/employee/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Partially updates specified attributes of an employee profile.
+* **Request Body**: Any subset of `Employee` fields.
+* **Response Status**: `200 OK`
+
+#### 9.6. Delete Employee Profile
+* **Method**: `DELETE`
+* **URL Path**: `/api/employee/{id}/`
+* **Authentication**: Required (`IsAuthenticated`)
+* **Description**: Permanently deletes an employee profile by ID.
+* **Response Status**: `200 OK`
+

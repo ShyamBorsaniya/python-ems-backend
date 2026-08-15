@@ -34,10 +34,10 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            if user.status == UserStatus.PENDING:
+            if user.status == UserStatus.INACTIVE:
                 return standard_response(
                     status_code=status.HTTP_201_CREATED,
-                    message="you are registered successfull please wait untill admin can approve"
+                    message="you are registered successfully but your account is inactive, please wait until admin can activate it"
                 )
 
             return standard_response(
@@ -241,7 +241,7 @@ class PendingUserListView(APIView):
     page_size = 5
 
     def get(self, request):
-        users = User.objects.filter(status=UserStatus.PENDING).select_related('role', 'company').order_by('-date_joined')
+        users = User.objects.filter(status=UserStatus.INACTIVE).select_related('role', 'company').order_by('-date_joined')
         if request.user.company:
             users = users.filter(company=request.user.company)
 
@@ -287,7 +287,7 @@ class UserApproveView(APIView):
 
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
-        user.status = UserStatus.APPROVED
+        user.status = UserStatus.ACTIVE
         user.save()
         return standard_response(
             status_code=status.HTTP_200_OK,
@@ -303,7 +303,7 @@ class UserRejectView(APIView):
 
     def post(self, request, pk):
         user = get_object_or_404(User, pk=pk)
-        user.status = UserStatus.REJECTED
+        user.status = UserStatus.LOCKED
         user.save()
         return standard_response(
             status_code=status.HTTP_200_OK,

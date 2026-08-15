@@ -3,15 +3,15 @@ from django.db import models
 
 
 class UserStatus(models.TextChoices):
-    PENDING = 'pending', 'Pending'
-    APPROVED = 'approved', 'Approved'
-    REJECTED = 'rejected', 'Rejected'
+    ACTIVE = 'active', 'Active'
+    INACTIVE = 'inactive', 'Inactive'
+    LOCKED = 'locked', 'Locked'
 
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=15, blank=True, null=True)
-    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    profile_photo_url = models.CharField(max_length=255, blank=True, null=True)
     role = models.ForeignKey(
         'role.Role',
         on_delete=models.PROTECT,
@@ -29,8 +29,9 @@ class User(AbstractUser):
     status = models.CharField(
         max_length=20,
         choices=UserStatus.choices,
-        default=UserStatus.APPROVED
+        default=UserStatus.ACTIVE
     )
+    last_login_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

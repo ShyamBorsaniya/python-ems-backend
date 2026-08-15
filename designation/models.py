@@ -8,6 +8,13 @@ class Designation(models.Model):
         on_delete=models.CASCADE,
         related_name='designations'
     )
+    department = models.ForeignKey(
+        'department.Department',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='designations'
+    )
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=50, default='')
     description = models.TextField(blank=True, null=True)

@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "role",
     "permission",
     "project",
+    "employee",
 ]
 
 MIDDLEWARE = [

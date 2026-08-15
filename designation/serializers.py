@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Designation
+from department.serializers import DepartmentSerializer
 
 
 class DesignationSerializer(serializers.ModelSerializer):
@@ -11,6 +12,7 @@ class DesignationSerializer(serializers.ModelSerializer):
             'id',
             'company',
             'company_name',
+            'department',
             'name',
             'code',
             'description',
@@ -19,6 +21,14 @@ class DesignationSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        if instance.department:
+            representation['department'] = DepartmentSerializer(instance.department).data
+        else:
+            representation['department'] = None
+        return representation
 
     def validate_name(self, value):
         if not value or not value.strip():
