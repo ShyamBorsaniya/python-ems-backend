@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
-from company.models import Company, Department, Designation, DesignationPermissionSet, Role, PermissionSet
+from company.models import Company, Department, Designation, DesignationPermissionSet, Role, PermissionSet, Module, Permission
 
 User = get_user_model()
 
@@ -38,7 +38,8 @@ class DesignationPermissionSetAPITest(TestCase):
             password="testpassword123",
             email="user@example.com",
             role=self.role,
-            company=self.company
+            company=self.company,
+            is_superuser=True
         )
         self.client.force_authenticate(user=self.user)
         self.department = Department.objects.create(company=self.company, name="Engineering", code="ENG")
@@ -74,3 +75,44 @@ class DesignationPermissionSetAPITest(TestCase):
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(DesignationPermissionSet.objects.filter(pk=dps.pk).exists())
+
+
+class DesignationAuthorizationAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.company = Company.objects.create(name="Acme Authorization", code="ACMEAUTH")
+        self.role = Role.objects.create(name="Authorized Role")
+        self.user = User.objects.create_user(
+            username="authuser",
+            password="testpassword123",
+            email="authuser@example.com",
+            role=self.role,
+            company=self.company
+        )
+        self.client.force_authenticate(user=self.user)
+        self.department = Department.objects.create(company=self.company, name="Engineering", code="ENG")
+        self.designation_url = reverse("designation-list-create")
+
+    def test_list_designations_without_permission_denied(self):
+        # The user does not have designation_management permission, should return 403
+        response = self.client.get(self.designation_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_list_designations_with_permission_allowed(self):
+        # Let's create the designation_management module and view permission, assign to the user's role
+        module = Module.objects.create(company=self.company, name="Designation Module", code="designation_management")
+        permission = Permission.objects.create(
+            company=self.company,
+            module=module,
+            name="designation.view",
+            code="designation:view",
+            action="view"
+        )
+        perm_set = PermissionSet.objects.create(company=self.company, name="Designation Reader", code="desig_reader")
+        from company.models import PermissionSetPermission, RolePermissionSet
+        PermissionSetPermission.objects.create(permission_set=perm_set, permission=permission)
+        RolePermissionSet.objects.create(role=self.role, permission_set=perm_set)
+
+        response = self.client.get(self.designation_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+

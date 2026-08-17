@@ -9,15 +9,21 @@ from django.core.paginator import Paginator
 from company.models import Department, DepartmentPermissionSet
 from company.serializers.department import DepartmentSerializer, DepartmentPermissionSetSerializer
 from company.views.company import standard_response
+from company.mixins import PermissionCheckMixin
 
 
-class DepartmentListCreateView(APIView):
+class DepartmentListCreateView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = DepartmentSerializer
     page_size = 10
+    module_code = 'department_management'
 
     def get(self, request):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
+
         departments = Department.objects.all()
         search_query = request.query_params.get("search", None)
         company_param = request.query_params.get("company", None)
@@ -67,6 +73,10 @@ class DepartmentListCreateView(APIView):
         )
 
     def post(self, request):
+        perm_error = self.check_permission(request, action='create')
+        if perm_error:
+            return perm_error
+
         serializer = DepartmentSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -82,15 +92,20 @@ class DepartmentListCreateView(APIView):
         )
 
 
-class DepartmentDetailView(APIView):
+class DepartmentDetailView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = DepartmentSerializer
+    module_code = 'department_management'
 
     def get_object(self, pk):
         return get_object_or_404(Department, pk=pk)
 
     def get(self, request, pk):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
+
         department = self.get_object(pk)
         serializer = DepartmentSerializer(department, context={'request': request})
         return standard_response(
@@ -100,6 +115,10 @@ class DepartmentDetailView(APIView):
         )
 
     def put(self, request, pk):
+        perm_error = self.check_permission(request, action='edit')
+        if perm_error:
+            return perm_error
+
         department = self.get_object(pk)
         serializer = DepartmentSerializer(department, data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -116,6 +135,10 @@ class DepartmentDetailView(APIView):
         )
 
     def patch(self, request, pk):
+        perm_error = self.check_permission(request, action='edit')
+        if perm_error:
+            return perm_error
+
         department = self.get_object(pk)
         serializer = DepartmentSerializer(department, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -132,6 +155,10 @@ class DepartmentDetailView(APIView):
         )
 
     def delete(self, request, pk):
+        perm_error = self.check_permission(request, action='delete')
+        if perm_error:
+            return perm_error
+
         department = self.get_object(pk)
         department.delete()
         return standard_response(

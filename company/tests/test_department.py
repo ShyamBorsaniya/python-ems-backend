@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
-from company.models import Company, Role, Department, DepartmentPermissionSet, PermissionSet
+from company.models import Company, Role, Department, DepartmentPermissionSet, PermissionSet, Module, Permission
 
 User = get_user_model()
 
@@ -55,7 +55,8 @@ class DepartmentAPITest(TestCase):
             password="testpassword123",
             email="user@example.com",
             role=self.role,
-            company=self.company
+            company=self.company,
+            is_superuser=True
         )
         self.client.force_authenticate(user=self.user)
         self.department = Department.objects.create(
@@ -199,7 +200,8 @@ class DepartmentPermissionSetAPITest(TestCase):
             password="testpassword123",
             email="user@example.com",
             role=self.role,
-            company=self.company
+            company=self.company,
+            is_superuser=True
         )
         self.client.force_authenticate(user=self.user)
         self.department = Department.objects.create(company=self.company, name="Engineering", code="ENG")
@@ -234,3 +236,42 @@ class DepartmentPermissionSetAPITest(TestCase):
         del_res = self.client.delete(detail_url)
         self.assertEqual(del_res.status_code, status.HTTP_200_OK)
         self.assertFalse(DepartmentPermissionSet.objects.filter(pk=dps.pk).exists())
+
+
+class DepartmentAuthorizationAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.company = Company.objects.create(name="Acme Auth Dept", code="ADEPTAUTH")
+        self.role = Role.objects.create(name="Authorized Role")
+        self.user = User.objects.create_user(
+            username="authuserdept",
+            password="testpassword123",
+            email="authuserdept@example.com",
+            role=self.role,
+            company=self.company
+        )
+        self.client.force_authenticate(user=self.user)
+        self.department_url = reverse("department-list-create")
+
+    def test_list_departments_without_permission_denied(self):
+        response = self.client.get(self.department_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_list_departments_with_permission_allowed(self):
+        # Create department_management module and view permission, assign to user's role
+        from company.models import PermissionSetPermission, RolePermissionSet
+        module = Module.objects.create(company=self.company, name="Department Module", code="department_management")
+        permission = Permission.objects.create(
+            company=self.company,
+            module=module,
+            name="department.view",
+            code="department:view",
+            action="view"
+        )
+        perm_set = PermissionSet.objects.create(company=self.company, name="Department Reader", code="dept_reader")
+        PermissionSetPermission.objects.create(permission_set=perm_set, permission=permission)
+        RolePermissionSet.objects.create(role=self.role, permission_set=perm_set)
+
+        response = self.client.get(self.department_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+

@@ -47,7 +47,8 @@ class ProjectAPITest(TestCase):
             password="password123",
             email="puser@example.com",
             role=self.role,
-            company=self.company
+            company=self.company,
+            is_superuser=True
         )
         self.client.force_authenticate(user=self.user)
 
@@ -132,7 +133,8 @@ class ProjectMemberAPITest(TestCase):
             password="password123",
             email="auser@example.com",
             role=self.role,
-            company=self.company
+            company=self.company,
+            is_superuser=True
         )
         self.emp_user = User.objects.create_user(
             username="employeeuser",

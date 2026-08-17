@@ -9,15 +9,21 @@ from rest_framework.views import APIView
 from company.models import Designation, DesignationPermissionSet
 from company.serializers.designation import DesignationSerializer, DesignationPermissionSetSerializer
 from company.views.company import standard_response
+from company.mixins import PermissionCheckMixin
 
 
-class DesignationListCreateView(APIView):
+class DesignationListCreateView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = DesignationSerializer
     page_size = 10
+    module_code = 'designation_management'
 
     def get(self, request):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
+
         designations = Designation.objects.all()
         search_query = request.query_params.get("search", None)
         company_param = request.query_params.get("company", None)
@@ -73,6 +79,10 @@ class DesignationListCreateView(APIView):
         )
 
     def post(self, request):
+        perm_error = self.check_permission(request, action='create')
+        if perm_error:
+            return perm_error
+
         serializer = DesignationSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -88,15 +98,20 @@ class DesignationListCreateView(APIView):
         )
 
 
-class DesignationDetailView(APIView):
+class DesignationDetailView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = DesignationSerializer
+    module_code = 'designation_management'
 
     def get_object(self, pk):
         return get_object_or_404(Designation, pk=pk)
 
     def get(self, request, pk):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
+
         designation = self.get_object(pk)
         serializer = DesignationSerializer(designation, context={'request': request})
         return standard_response(
@@ -106,6 +121,10 @@ class DesignationDetailView(APIView):
         )
 
     def put(self, request, pk):
+        perm_error = self.check_permission(request, action='edit')
+        if perm_error:
+            return perm_error
+
         designation = self.get_object(pk)
         serializer = DesignationSerializer(designation, data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -122,6 +141,10 @@ class DesignationDetailView(APIView):
         )
 
     def patch(self, request, pk):
+        perm_error = self.check_permission(request, action='edit')
+        if perm_error:
+            return perm_error
+
         designation = self.get_object(pk)
         serializer = DesignationSerializer(designation, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -138,6 +161,10 @@ class DesignationDetailView(APIView):
         )
 
     def delete(self, request, pk):
+        perm_error = self.check_permission(request, action='delete')
+        if perm_error:
+            return perm_error
+
         designation = self.get_object(pk)
         designation.delete()
         return standard_response(
