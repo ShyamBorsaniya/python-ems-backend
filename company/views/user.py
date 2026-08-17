@@ -80,6 +80,9 @@ class UserListView(APIView):
 
     def get(self, request):
         users = User.objects.all().select_related('role', 'company').order_by('-date_joined')
+        if not getattr(request.user, 'is_superuser', False):
+            users = users.filter(is_superuser=False)
+
         search_query = request.query_params.get("search", None)
         role_param = request.query_params.get("role", None)
         company_param = request.query_params.get("company", None)
@@ -229,6 +232,9 @@ class PendingUserListView(APIView):
 
     def get(self, request):
         users = User.objects.filter(status=UserStatus.INACTIVE).select_related('role', 'company').order_by('-date_joined')
+        if not getattr(request.user, 'is_superuser', False):
+            users = users.filter(is_superuser=False)
+
         if request.user.company:
             users = users.filter(company=request.user.company)
 

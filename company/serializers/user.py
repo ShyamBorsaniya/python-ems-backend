@@ -6,6 +6,7 @@ from company.serializers.company import CompanySerializer
 
 class UserSerializer(serializers.ModelSerializer):
     role_name = serializers.ReadOnlyField(source='role.name')
+    permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -25,8 +26,12 @@ class UserSerializer(serializers.ModelSerializer):
             "last_login_at",
             "created_at",
             "updated_at",
+            "permissions",
         ]
-        read_only_fields = ["id", "created_at", "updated_at", "role_name", "last_login_at"]
+        read_only_fields = ["id", "created_at", "updated_at", "role_name", "last_login_at", "permissions"]
+
+    def get_permissions(self, obj):
+        return obj.get_all_permissions()
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

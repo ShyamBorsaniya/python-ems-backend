@@ -87,6 +87,143 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["user"]["company"]["name"], "Test Corp")
         self.assertEqual(response.data["data"]["user"]["company"]["email"], "info@testcorp.com")
 
+    def test_user_login_returns_permissions(self):
+        # 1. Create a module and a permission
+        from company.models import Module, Permission, PermissionSet, RolePermissionSet
+        module = Module.objects.create(
+            company=self.company,
+            name="Employee Module",
+            code="emp_mod"
+        )
+        permission1 = Permission.objects.create(
+            company=self.company,
+            module=module,
+            name="employee.view",
+            code="employee:view",
+            action="view"
+        )
+        permission2 = Permission.objects.create(
+            company=self.company,
+            module=module,
+            name="employee.create",
+            code="employee:create",
+            action="create"
+        )
+        # 2. Create permission set
+        permission_set = PermissionSet.objects.create(
+            company=self.company,
+            name="Employee Operations",
+            code="emp_ops"
+        )
+        # Link permissions to permission set
+        from company.models import PermissionSetPermission
+        PermissionSetPermission.objects.create(permission_set=permission_set, permission=permission1)
+        PermissionSetPermission.objects.create(permission_set=permission_set, permission=permission2)
+
+        # 3. Link permission set to role
+        RolePermissionSet.objects.create(role=self.role, permission_set=permission_set)
+
+        # 4. Register and Login the user
+        self.client.post(self.register_url, self.user_data, format="json")
+        login_payload = {
+            "username": "testuser",
+            "password": "Password123!",
+        }
+        response = self.client.post(self.login_url, login_payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_data = response.data["data"]["user"]
+        self.assertIn("permissions", user_data)
+        
+        # Verify permissions list contains the module and nested permissions
+        self.assertEqual(len(user_data["permissions"]), 1)
+        module_group = user_data["permissions"][0]
+        self.assertEqual(module_group["module_name"], "Employee Module")
+        self.assertEqual(len(module_group["permissions"]), 2)
+        
+        codes = [p["code"] for p in module_group["permissions"]]
+        self.assertIn("employee:view", codes)
+        self.assertIn("employee:create", codes)
+
+        # Check permission structure fields
+        perm_item = module_group["permissions"][0]
+        self.assertEqual(perm_item["name"], "employee.view" if perm_item["code"] == "employee:view" else "employee.create")
+        self.assertIn("display_name", perm_item)
+        self.assertIn("action", perm_item)
+
+    def test_user_permissions_from_department_and_designation(self):
+        from company.models import Module, Permission, PermissionSet, Department, Designation, DepartmentPermissionSet, DesignationPermissionSet, Employee
+        # Create department & designation
+        department = Department.objects.create(company=self.company, name="Engineering", code="ENG")
+        designation = Designation.objects.create(company=self.company, department=department, name="Tech Lead", code="TL")
+        
+        # Create user
+        user = User.objects.create_user(
+            username="empuser",
+            email="empuser@example.com",
+            password="Password123!",
+            company=self.company
+        )
+        
+        # Create employee record linking to user, department, designation
+        from datetime import date
+        Employee.objects.create(
+            user=user,
+            company=self.company,
+            code="EMP001",
+            department=department,
+            designation=designation,
+            joining_date=date.today()
+        )
+        
+        # Create module and permissions
+        module = Module.objects.create(company=self.company, name="Admin Module", code="admin_mod")
+        dept_perm = Permission.objects.create(
+            company=self.company,
+            module=module,
+            name="dept.view",
+            code="dept:view",
+            action="view"
+        )
+        desg_perm = Permission.objects.create(
+            company=self.company,
+            module=module,
+            name="desg.edit",
+            code="desg:edit",
+            action="edit"
+        )
+        
+        # Create permission sets and link permissions
+        dept_ps = PermissionSet.objects.create(company=self.company, name="Dept PS", code="dept_ps")
+        desg_ps = PermissionSet.objects.create(company=self.company, name="Desg PS", code="desg_ps")
+        
+        from company.models import PermissionSetPermission
+        PermissionSetPermission.objects.create(permission_set=dept_ps, permission=dept_perm)
+        PermissionSetPermission.objects.create(permission_set=desg_ps, permission=desg_perm)
+        
+        # Associate permission sets with department and designation
+        DepartmentPermissionSet.objects.create(department=department, permission_set=dept_ps)
+        DesignationPermissionSet.objects.create(designation=designation, permission_set=desg_ps)
+        
+        # Login
+        login_payload = {
+            "username": "empuser",
+            "password": "Password123!",
+        }
+        response = self.client.post(self.login_url, login_payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        user_data = response.data["data"]["user"]
+        self.assertIn("permissions", user_data)
+        
+        # Verify permissions list contains the module and nested permissions
+        self.assertEqual(len(user_data["permissions"]), 1)
+        module_group = user_data["permissions"][0]
+        self.assertEqual(module_group["module_name"], "Admin Module")
+        self.assertEqual(len(module_group["permissions"]), 2)
+        
+        codes = [p["code"] for p in module_group["permissions"]]
+        self.assertIn("dept:view", codes)
+        self.assertIn("desg:edit", codes)
+
     def test_user_login_with_email(self):
         self.client.post(self.register_url, self.user_data, format="json")
         login_payload = {
@@ -193,6 +330,39 @@ class UserAuthTests(APITestCase):
         self.assertIn("pagination", response.data["data"])
         self.assertLessEqual(len(response.data["data"]["results"]), 5)
         self.assertEqual(response.data["data"]["pagination"]["page_size"], 5)
+
+    def test_list_users_excludes_superuser_for_regular_user(self):
+        regular_user = User.objects.create_user(
+            username="regularuser",
+            email="regular@example.com",
+            password="Password123!",
+            is_superuser=False
+        )
+        superuser = User.objects.create_superuser(
+            username="adminuser",
+            email="admin@example.com",
+            password="Password123!"
+        )
+        self.client.force_authenticate(user=regular_user)
+        url = reverse("user-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        usernames = [u["username"] for u in response.data["data"]["results"]]
+        self.assertNotIn("adminuser", usernames)
+        self.assertIn("regularuser", usernames)
+
+    def test_list_users_includes_superuser_for_superuser(self):
+        superuser = User.objects.create_superuser(
+            username="adminuser2",
+            email="admin2@example.com",
+            password="Password123!"
+        )
+        self.client.force_authenticate(user=superuser)
+        url = reverse("user-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        usernames = [u["username"] for u in response.data["data"]["results"]]
+        self.assertIn("adminuser2", usernames)
 
     def test_list_users_paginates_to_five_per_page(self):
         user = User.objects.create_user(
