@@ -9,15 +9,21 @@ from django.core.paginator import Paginator
 from company.models import Project, ProjectMember
 from company.serializers.project import ProjectSerializer, ProjectMemberSerializer
 from company.views.company import standard_response
+from company.mixins import PermissionCheckMixin
 
 
-class ProjectListCreateView(APIView):
+class ProjectListCreateView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = ProjectSerializer
     page_size = 10
+    module_code = 'project_management'
 
     def get(self, request):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
+
         projects = Project.objects.all()
         search_query = request.query_params.get("search", None)
         company_param = request.query_params.get("company", None)
@@ -71,6 +77,10 @@ class ProjectListCreateView(APIView):
         )
 
     def post(self, request):
+        perm_error = self.check_permission(request, action='create')
+        if perm_error:
+            return perm_error
+
         serializer = ProjectSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -86,15 +96,20 @@ class ProjectListCreateView(APIView):
         )
 
 
-class ProjectDetailView(APIView):
+class ProjectDetailView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = ProjectSerializer
+    module_code = 'project_management'
 
     def get_object(self, pk):
         return get_object_or_404(Project, pk=pk)
 
     def get(self, request, pk):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
+
         project = self.get_object(pk)
         serializer = ProjectSerializer(project, context={'request': request})
         return standard_response(
@@ -104,6 +119,10 @@ class ProjectDetailView(APIView):
         )
 
     def put(self, request, pk):
+        perm_error = self.check_permission(request, action='edit')
+        if perm_error:
+            return perm_error
+
         project = self.get_object(pk)
         serializer = ProjectSerializer(project, data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -120,6 +139,10 @@ class ProjectDetailView(APIView):
         )
 
     def patch(self, request, pk):
+        perm_error = self.check_permission(request, action='edit')
+        if perm_error:
+            return perm_error
+
         project = self.get_object(pk)
         serializer = ProjectSerializer(project, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -136,6 +159,10 @@ class ProjectDetailView(APIView):
         )
 
     def delete(self, request, pk):
+        perm_error = self.check_permission(request, action='delete')
+        if perm_error:
+            return perm_error
+
         project = self.get_object(pk)
         project.delete()
         return standard_response(
@@ -144,13 +171,18 @@ class ProjectDetailView(APIView):
         )
 
 
-class ProjectMemberListCreateView(APIView):
+class ProjectMemberListCreateView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = ProjectMemberSerializer
     page_size = 10
+    module_code = 'project_management'
 
     def get(self, request):
+        perm_error = self.check_permission(request, action='manage_members')
+        if perm_error:
+            return perm_error
+
         members = ProjectMember.objects.select_related('project', 'employee').all()
         project_param = request.query_params.get("project", None)
         employee_param = request.query_params.get("employee", None)
@@ -206,6 +238,10 @@ class ProjectMemberListCreateView(APIView):
         )
 
     def post(self, request):
+        perm_error = self.check_permission(request, action='manage_members')
+        if perm_error:
+            return perm_error
+
         serializer = ProjectMemberSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -221,15 +257,20 @@ class ProjectMemberListCreateView(APIView):
         )
 
 
-class ProjectMemberDetailView(APIView):
+class ProjectMemberDetailView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = ProjectMemberSerializer
+    module_code = 'project_management'
 
     def get_object(self, pk):
         return get_object_or_404(ProjectMember, pk=pk)
 
     def get(self, request, pk):
+        perm_error = self.check_permission(request, action='manage_members')
+        if perm_error:
+            return perm_error
+
         member = self.get_object(pk)
         serializer = ProjectMemberSerializer(member, context={'request': request})
         return standard_response(
@@ -239,6 +280,10 @@ class ProjectMemberDetailView(APIView):
         )
 
     def put(self, request, pk):
+        perm_error = self.check_permission(request, action='manage_members')
+        if perm_error:
+            return perm_error
+
         member = self.get_object(pk)
         serializer = ProjectMemberSerializer(member, data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -255,6 +300,10 @@ class ProjectMemberDetailView(APIView):
         )
 
     def patch(self, request, pk):
+        perm_error = self.check_permission(request, action='manage_members')
+        if perm_error:
+            return perm_error
+
         member = self.get_object(pk)
         serializer = ProjectMemberSerializer(member, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -271,6 +320,10 @@ class ProjectMemberDetailView(APIView):
         )
 
     def delete(self, request, pk):
+        perm_error = self.check_permission(request, action='manage_members')
+        if perm_error:
+            return perm_error
+
         member = self.get_object(pk)
         member.delete()
         return standard_response(

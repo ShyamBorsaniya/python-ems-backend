@@ -314,7 +314,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_list_users_authenticated(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="authuser",
             email="auth@example.com",
             password="Password123!",
@@ -332,10 +332,19 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["pagination"]["page_size"], 5)
 
     def test_list_users_excludes_superuser_for_regular_user(self):
+        from company.models import Module, Permission, PermissionSet, RolePermissionSet, PermissionSetPermission
+        module, _ = Module.objects.get_or_create(company=self.company, code="user_management", defaults={"name": "User Module"})
+        permission, _ = Permission.objects.get_or_create(company=self.company, module=module, action="view", defaults={"name": "user.view", "code": "user:view"})
+        perm_set = PermissionSet.objects.create(company=self.company, name="User View Ex", code="user_view_ex")
+        PermissionSetPermission.objects.create(permission_set=perm_set, permission=permission)
+        RolePermissionSet.objects.create(role=self.role, permission_set=perm_set)
+
         regular_user = User.objects.create_user(
             username="regularuser",
             email="regular@example.com",
             password="Password123!",
+            role=self.role,
+            company=self.company,
             is_superuser=False
         )
         superuser = User.objects.create_superuser(
@@ -364,8 +373,81 @@ class UserAuthTests(APITestCase):
         usernames = [u["username"] for u in response.data["data"]["results"]]
         self.assertIn("adminuser2", usernames)
 
-    def test_list_users_paginates_to_five_per_page(self):
+    def test_dynamic_permission_check_regular_user_with_permission(self):
+        from company.models import Module, Permission, PermissionSet, RolePermissionSet, PermissionSetPermission
+        module, _ = Module.objects.get_or_create(company=self.company, code="user_management", defaults={"name": "User Module"})
+        permission, _ = Permission.objects.get_or_create(company=self.company, module=module, action="view", defaults={"name": "user.view", "code": "user:view"})
+        perm_set = PermissionSet.objects.create(company=self.company, name="User View Dyn", code="user_view_dyn")
+        PermissionSetPermission.objects.create(permission_set=perm_set, permission=permission)
+        role_dyn = Role.objects.create(name="Dyn Role", display_name="Dynamic Role")
+        RolePermissionSet.objects.create(role=role_dyn, permission_set=perm_set)
+
         user = User.objects.create_user(
+            username="permuser",
+            email="permuser@example.com",
+            password="Password123!",
+            role=role_dyn,
+            company=self.company
+        )
+        self.client.force_authenticate(user=user)
+        url = reverse("user-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_dynamic_permission_check_regular_user_without_permission_denied(self):
+        role_no_perm = Role.objects.create(name="No Perm Role", display_name="No permissions")
+        user = User.objects.create_user(
+            username="nopermuser",
+            email="noperm@example.com",
+            password="Password123!",
+            role=role_no_perm,
+            company=self.company
+        )
+        self.client.force_authenticate(user=user)
+        url = reverse("user-list")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_create_permission_regular_user_without_permission_denied(self):
+        role_no_perm = Role.objects.create(name="No Perm Role 2", display_name="No permissions")
+        user = User.objects.create_user(
+            username="nopermuser2",
+            email="noperm2@example.com",
+            password="Password123!",
+            role=role_no_perm,
+            company=self.company
+        )
+        self.client.force_authenticate(user=user)
+        url = reverse("user-list")
+        response = self.client.post(url, self.user_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_user_create_permission_regular_user_with_permission_allowed(self):
+        from company.models import Module, Permission, PermissionSet, RolePermissionSet, PermissionSetPermission
+        module, _ = Module.objects.get_or_create(company=self.company, code="user_management", defaults={"name": "User Module"})
+        permission, _ = Permission.objects.get_or_create(company=self.company, module=module, action="create", defaults={"name": "user.create", "code": "user:create"})
+        perm_set = PermissionSet.objects.create(company=self.company, name="User Create Dyn", code="user_create_dyn")
+        PermissionSetPermission.objects.create(permission_set=perm_set, permission=permission)
+        role_create = Role.objects.create(name="Create Role", display_name="Create Role")
+        RolePermissionSet.objects.create(role=role_create, permission_set=perm_set)
+
+        user = User.objects.create_user(
+            username="creatoruser",
+            email="creator@example.com",
+            password="Password123!",
+            role=role_create,
+            company=self.company
+        )
+        self.client.force_authenticate(user=user)
+        url = reverse("user-list")
+        data = self.user_data.copy()
+        data["username"] = "newcreateduser"
+        data["email"] = "newcreated@example.com"
+        response = self.client.post(url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_list_users_paginates_to_five_per_page(self):
+        user = User.objects.create_superuser(
             username="authuser",
             email="auth@example.com",
             password="Password123!",
@@ -396,7 +478,7 @@ class UserAuthTests(APITestCase):
         self.assertIsNone(second_page.data["data"]["pagination"]["next_page"])
 
     def test_list_users_filter_by_company(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="authuser",
             email="auth@example.com",
             password="Password123!",
@@ -412,7 +494,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["results"][0]["company"]["id"], self.company.id)
 
     def test_get_user_detail(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="detailuser",
             email="detailuser@example.com",
             password="Password123!",
@@ -428,7 +510,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["company"]["id"], self.company.id)
 
     def test_update_user_put(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="updateuser",
             email="updateuser@example.com",
             password="Password123!",
@@ -453,7 +535,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["company"]["id"], self.company.id)
 
     def test_update_user_patch(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="patchuser",
             email="patchuser@example.com",
             password="Password123!",
@@ -469,7 +551,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["first_name"], "Patched")
 
     def test_soft_delete_user(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="softdeleteuser",
             email="softdelete@example.com",
             password="Password123!",
@@ -487,7 +569,7 @@ class UserAuthTests(APITestCase):
         self.assertFalse(user.is_active)
 
     def test_restore_soft_deleted_user(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="restoreuser",
             email="restore@example.com",
             password="Password123!",
@@ -526,7 +608,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["user"]["status"], "active")
 
     def test_update_user_status(self):
-        user = User.objects.create_user(
+        user = User.objects.create_superuser(
             username="statususer",
             email="statususer@example.com",
             password="Password123!",
@@ -548,7 +630,7 @@ class UserAuthTests(APITestCase):
             company=self.company,
             status="inactive"
         )
-        user2 = User.objects.create_user(
+        user2 = User.objects.create_superuser(
             username="user_active",
             email="active@example.com",
             password="Password123!",
@@ -581,7 +663,7 @@ class UserAuthTests(APITestCase):
             company=other_company,
             status=UserStatus.INACTIVE
         )
-        auth_user = User.objects.create_user(
+        auth_user = User.objects.create_superuser(
             username="admin_user",
             email="admin@example.com",
             password="Password123!",
@@ -612,7 +694,7 @@ class UserAuthTests(APITestCase):
             company=self.company,
             status=UserStatus.INACTIVE
         )
-        auth_user = User.objects.create_user(
+        auth_user = User.objects.create_superuser(
             username="approver",
             email="approver@example.com",
             password="Password123!",
@@ -638,7 +720,7 @@ class UserAuthTests(APITestCase):
             company=self.company,
             status=UserStatus.INACTIVE
         )
-        auth_user = User.objects.create_user(
+        auth_user = User.objects.create_superuser(
             username="rejector",
             email="rejector@example.com",
             password="Password123!",
@@ -663,3 +745,78 @@ class UserAuthTests(APITestCase):
         url_reject = reverse("user-reject", kwargs={"pk": 1})
         response = self.client.post(url_reject)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_approve_user_with_permission(self):
+        from company.models import Module, Permission, PermissionSet, RolePermissionSet, PermissionSetPermission
+        module = Module.objects.create(
+            company=self.company,
+            name="User Management",
+            code="user_management"
+        )
+        permission = Permission.objects.create(
+            company=self.company,
+            module=module,
+            name="user.approve",
+            code="user:approve",
+            action="approve"
+        )
+        permission_set = PermissionSet.objects.create(
+            company=self.company,
+            name="User Operations",
+            code="user_ops"
+        )
+        PermissionSetPermission.objects.create(permission_set=permission_set, permission=permission)
+        
+        approver_role = Role.objects.create(
+            name="User Manager",
+            display_name="Manages Users"
+        )
+        RolePermissionSet.objects.create(role=approver_role, permission_set=permission_set)
+
+        user_pending = User.objects.create_user(
+            username="to_approve",
+            email="to_approve@example.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company,
+            status=UserStatus.INACTIVE
+        )
+        auth_user = User.objects.create_user(
+            username="approver",
+            email="approver@example.com",
+            password="Password123!",
+            role=approver_role,
+            company=self.company,
+            status=UserStatus.ACTIVE
+        )
+        self.client.force_authenticate(user=auth_user)
+        url = reverse("user-approve", kwargs={"pk": user_pending.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["data"]["status"], UserStatus.ACTIVE)
+        user_pending.refresh_from_db()
+        self.assertEqual(user_pending.status, UserStatus.ACTIVE)
+
+    def test_approve_user_without_permission_fails(self):
+        user_pending = User.objects.create_user(
+            username="to_approve",
+            email="to_approve@example.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company,
+            status=UserStatus.INACTIVE
+        )
+        auth_user = User.objects.create_user(
+            username="unauthorized_approver",
+            email="unauth_approver@example.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company,
+            status=UserStatus.ACTIVE
+        )
+        self.client.force_authenticate(user=auth_user)
+        url = reverse("user-approve", kwargs={"pk": user_pending.pk})
+        response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+

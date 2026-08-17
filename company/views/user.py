@@ -9,6 +9,7 @@ from rest_framework import status
 from company.models import User, UserStatus
 from company.serializers import RegisterSerializer, LoginSerializer, UserSerializer
 from company.views.company import standard_response
+from company.mixins import PermissionCheckMixin
 
 
 class RegisterView(APIView):
@@ -72,13 +73,18 @@ class LoginView(APIView):
         )
 
 
-class UserListView(APIView):
+class UserListView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
     page_size = 5
+    module_code = 'user_management'
 
     def get(self, request):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
+
         users = User.objects.all().select_related('role', 'company').order_by('-date_joined')
         if not getattr(request.user, 'is_superuser', False):
             users = users.filter(is_superuser=False)
@@ -132,6 +138,10 @@ class UserListView(APIView):
         )
 
     def post(self, request):
+        perm_error = self.check_permission(request, action='create')
+        if perm_error:
+            return perm_error
+
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -148,10 +158,11 @@ class UserListView(APIView):
         )
 
 
-class UserDetailView(APIView):
+class UserDetailView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
+    module_code = 'user_management'
 
     def get_object(self, pk):
         return get_object_or_404(User, pk=pk)
@@ -166,6 +177,9 @@ class UserDetailView(APIView):
         )
 
     def put(self, request, pk):
+        perm_error = self.check_permission(request, action='update')
+        if perm_error:
+            return perm_error
         user = self.get_object(pk)
         serializer = UserSerializer(user, data=request.data, context={'request': request})
         if serializer.is_valid():
@@ -182,6 +196,9 @@ class UserDetailView(APIView):
         )
 
     def patch(self, request, pk):
+        perm_error = self.check_permission(request, action='update')
+        if perm_error:
+            return perm_error
         user = self.get_object(pk)
         serializer = UserSerializer(user, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
@@ -198,6 +215,9 @@ class UserDetailView(APIView):
         )
 
     def delete(self, request, pk):
+        perm_error = self.check_permission(request, action='delete')
+        if perm_error:
+            return perm_error
         user = self.get_object(pk)
         user.is_active = False
         user.save()
@@ -208,12 +228,16 @@ class UserDetailView(APIView):
         )
 
 
-class UserRestoreView(APIView):
+class UserRestoreView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
+    module_code = 'user_management'
 
     def post(self, request, pk):
+        perm_error = self.check_permission(request, action='update')
+        if perm_error:
+            return perm_error
         user = get_object_or_404(User, pk=pk)
         user.is_active = True
         user.save()
@@ -224,13 +248,17 @@ class UserRestoreView(APIView):
         )
 
 
-class PendingUserListView(APIView):
+class PendingUserListView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
     page_size = 5
+    module_code = 'user_management'
 
     def get(self, request):
+        perm_error = self.check_permission(request, action='view')
+        if perm_error:
+            return perm_error
         users = User.objects.filter(status=UserStatus.INACTIVE).select_related('role', 'company').order_by('-date_joined')
         if not getattr(request.user, 'is_superuser', False):
             users = users.filter(is_superuser=False)
@@ -273,12 +301,16 @@ class PendingUserListView(APIView):
         )
 
 
-class UserApproveView(APIView):
+class UserApproveView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
+    module_code = 'user_management'
 
     def post(self, request, pk):
+        perm_error = self.check_permission(request, action='approve')
+        if perm_error:
+            return perm_error
         user = get_object_or_404(User, pk=pk)
         user.status = UserStatus.ACTIVE
         user.save()
@@ -289,12 +321,16 @@ class UserApproveView(APIView):
         )
 
 
-class UserRejectView(APIView):
+class UserRejectView(PermissionCheckMixin, APIView):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     serializer_class = UserSerializer
+    module_code = 'user_management'
 
     def post(self, request, pk):
+        perm_error = self.check_permission(request, action='reject')
+        if perm_error:
+            return perm_error
         user = get_object_or_404(User, pk=pk)
         user.status = UserStatus.LOCKED
         user.save()
