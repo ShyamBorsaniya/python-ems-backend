@@ -5,8 +5,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
 
-from company.models import Company
-from company.serializers import CompanySerializer
+from django.db.models import Prefetch
+from company.models import Company, Department, Designation
+from company.serializers import CompanySerializer, CompanyPublicListSerializer
 
 
 def standard_response(status_code, message, data=None, errors=None):
@@ -126,3 +127,53 @@ class CompanyDetailView(APIView):
             status_code=status.HTTP_200_OK,
             message="Company deleted successfully"
         )
+
+
+class PublicCompanyListView(APIView):
+    permission_classes = [AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = CompanyPublicListSerializer
+
+    def get(self, request):
+        is_active_param = request.query_params.get("is_active", "true")
+        search_query = request.query_params.get("search", None)
+
+        companies = Company.objects.all()
+        dept_queryset = Department.objects.all()
+        desg_queryset = Designation.objects.all()
+
+        if is_active_param.lower() in ["true", "1"]:
+            companies = companies.filter(is_active=True)
+            dept_queryset = dept_queryset.filter(is_active=True)
+            desg_queryset = desg_queryset.filter(is_active=True)
+        elif is_active_param.lower() in ["false", "0"]:
+            companies = companies.filter(is_active=False)
+            dept_queryset = dept_queryset.filter(is_active=False)
+            desg_queryset = desg_queryset.filter(is_active=False)
+
+        if search_query:
+            companies = companies.filter(
+                name__icontains=search_query
+            ) | companies.filter(
+                code__icontains=search_query
+            )
+
+        desg_prefetch = Prefetch(
+            'designations',
+            queryset=desg_queryset.order_by('-created_at')
+        )
+        
+        dept_prefetch = Prefetch(
+            'departments',
+            queryset=dept_queryset.prefetch_related(desg_prefetch).order_by('-created_at')
+        )
+
+        companies = companies.prefetch_related(dept_prefetch).order_by('-created_at')
+
+        serializer = CompanyPublicListSerializer(companies, many=True, context={'request': request})
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Public company list retrieved successfully",
+            data=serializer.data
+        )
+

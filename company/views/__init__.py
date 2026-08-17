@@ -1,4 +1,4 @@
-from .company import CompanyListCreateView, CompanyDetailView, standard_response
+from .company import CompanyListCreateView, CompanyDetailView, standard_response, PublicCompanyListView
 from .user import (
     RegisterView, LoginView, UserListView, UserDetailView, UserRestoreView,
     PendingUserListView, UserApproveView, UserRejectView

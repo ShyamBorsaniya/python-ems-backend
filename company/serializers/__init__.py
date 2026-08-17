@@ -1,4 +1,4 @@
-from .company import CompanySerializer
+from .company import CompanySerializer, CompanyPublicListSerializer, DepartmentPublicSerializer, DesignationPublicSerializer
 from .user import UserSerializer, RegisterSerializer, LoginSerializer
 from .department import DepartmentSerializer, DepartmentPermissionSetSerializer
 from .designation import DesignationSerializer, DesignationPermissionSetSerializer

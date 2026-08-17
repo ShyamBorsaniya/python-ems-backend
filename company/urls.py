@@ -2,7 +2,7 @@ from django.urls import path
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from company.views import (
-    CompanyListCreateView, CompanyDetailView,
+    CompanyListCreateView, CompanyDetailView, PublicCompanyListView,
     RegisterView, LoginView, UserListView, UserDetailView, UserRestoreView,
     PendingUserListView, UserApproveView, UserRejectView,
     DepartmentListCreateView, DepartmentDetailView,
@@ -23,6 +23,8 @@ from company.views import (
 urlpatterns = [
     # Company URLs
     path('company/', CompanyListCreateView.as_view(), name='company-list-create'),
+    path('company/public/', PublicCompanyListView.as_view(), name='public-company-list'),
+    path('public/companies/', PublicCompanyListView.as_view(), name='public-companies-list'),
     path('company/<int:pk>/', CompanyDetailView.as_view(), name='company-detail'),
 
     # User URLs
