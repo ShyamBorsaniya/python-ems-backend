@@ -4,8 +4,8 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from company.views import (
     CompanyListCreateView, CompanyDetailView, PublicCompanyListView,
     RegisterView, LoginView, UserListView, UserDetailView, UserRestoreView,
-    PendingUserListView, UserApproveView, UserRejectView,
-    DepartmentListCreateView, DepartmentDetailView,
+    PendingUserListView, UserApproveView, UserRejectView, UserOnboardView, UserOnboardDetailView,
+    DepartmentListCreateView, DepartmentDetailView, DepartmentDesignationListView,
     DepartmentPermissionSetListCreateView, DepartmentPermissionSetDetailView,
     DesignationListCreateView, DesignationDetailView,
     DesignationPermissionSetListCreateView, DesignationPermissionSetDetailView,
@@ -32,6 +32,10 @@ urlpatterns = [
     path('users/', UserListView.as_view(), name='users-list'),
     path('user/pending/', PendingUserListView.as_view(), name='user-pending-list'),
     path('users/pending/', PendingUserListView.as_view(), name='users-pending-list'),
+    path('user/onboard/', UserOnboardView.as_view(), name='user-onboard'),
+    path('users/onboard/', UserOnboardView.as_view(), name='users-onboard'),
+    path('user/onboard/<int:pk>/', UserOnboardDetailView.as_view(), name='user-onboard-detail'),
+    path('users/onboard/<int:pk>/', UserOnboardDetailView.as_view(), name='users-onboard-detail'),
     path('user/<int:pk>/', UserDetailView.as_view(), name='user-detail'),
     path('users/<int:pk>/', UserDetailView.as_view(), name='users-detail'),
     path('user/<int:pk>/restore/', UserRestoreView.as_view(), name='user-restore'),
@@ -46,6 +50,7 @@ urlpatterns = [
 
     # Department URLs
     path('department/', DepartmentListCreateView.as_view(), name='department-list-create'),
+    path('department/designations/', DepartmentDesignationListView.as_view(), name='department-designation-list'),
     path('department/permission-sets/', DepartmentPermissionSetListCreateView.as_view(), name='department-permission-set-list-create'),
     path('department/permission-sets/<int:pk>/', DepartmentPermissionSetDetailView.as_view(), name='department-permission-set-detail'),
     path('department/<int:pk>/', DepartmentDetailView.as_view(), name='department-detail'),

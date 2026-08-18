@@ -45,6 +45,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
             representation['department'] = DepartmentSerializer(instance.department).data
         else:
             representation['department'] = None
+        if instance.designation:
+            from company.serializers.designation import DesignationSerializer
+            representation['designation'] = DesignationSerializer(instance.designation, context=self.context).data
+        else:
+            representation['designation'] = None
         return representation
 
     def get_user_full_name(self, obj):

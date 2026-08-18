@@ -333,7 +333,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("non_field_errors", response.data["errors"])
-        self.assertIn("your account has not activated, please contact to admin", response.data["errors"]["non_field_errors"])
+        self.assertIn("Your account is inactive, please contact to admin for further query", response.data["errors"]["non_field_errors"])
 
     def test_login_inactive_user_status(self):
         User.objects.create_user(
@@ -352,7 +352,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("non_field_errors", response.data["errors"])
-        self.assertIn("your account has not activated, please contact to admin", response.data["errors"]["non_field_errors"])
+        self.assertIn("Your account is pending, please contact to admin for further query", response.data["errors"]["non_field_errors"])
 
     def test_login_locked_user(self):
         User.objects.create_user(
@@ -371,7 +371,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("non_field_errors", response.data["errors"])
-        self.assertIn("your account has been locked, contact to admin for further query", response.data["errors"]["non_field_errors"])
+        self.assertIn("Your account has been rejected, please contact to admin for further query", response.data["errors"]["non_field_errors"])
 
     def test_list_users_unauthenticated(self):
         url = reverse("user-list")
@@ -574,6 +574,62 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.data["data"]["username"], "detailuser")
         self.assertEqual(response.data["data"]["company"]["id"], self.company.id)
 
+    def test_get_user_detail_with_employee_profile(self):
+        from company.models import Department, Designation, Employee
+        
+        department = Department.objects.create(
+            company=self.company,
+            name="Engineering",
+            code="ENG"
+        )
+        designation = Designation.objects.create(
+            company=self.company,
+            department=department,
+            name="Developer",
+            code="DEV"
+        )
+        
+        user = User.objects.create_user(
+            username="detailuser_emp",
+            email="detailuser_emp@example.com",
+            password="Password123!",
+            role=self.role,
+            company=self.company
+        )
+        
+        employee = Employee.objects.create(
+            user=user,
+            company=self.company,
+            code="EMP-101",
+            department=department,
+            designation=designation,
+            joining_date="2026-08-18"
+        )
+        
+        self.client.force_authenticate(user=user)
+        url = reverse("user-detail", kwargs={"pk": user.pk})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        
+        user_data = response.data["data"]
+        self.assertEqual(user_data["username"], "detailuser_emp")
+        self.assertEqual(user_data["company"]["id"], self.company.id)
+        
+        # Verify employee record
+        self.assertIsNotNone(user_data["employee"])
+        self.assertEqual(user_data["employee"]["code"], "EMP-101")
+        
+        # Verify designation record
+        self.assertIsNotNone(user_data["designation"])
+        self.assertEqual(user_data["designation"]["name"], "Developer")
+        self.assertEqual(user_data["designation"]["code"], "DEV")
+        
+        # Verify department record
+        self.assertIsNotNone(user_data["department"])
+        self.assertEqual(user_data["department"]["name"], "Engineering")
+        self.assertEqual(user_data["department"]["code"], "ENG")
+
     def test_update_user_put(self):
         user = User.objects.create_superuser(
             username="updateuser",
@@ -615,10 +671,10 @@ class UserAuthTests(APITestCase):
         self.assertTrue(response.data["success"])
         self.assertEqual(response.data["data"]["first_name"], "Patched")
 
-    def test_soft_delete_user(self):
+    def test_delete_user_permanently(self):
         user = User.objects.create_superuser(
-            username="softdeleteuser",
-            email="softdelete@example.com",
+            username="deleteuser",
+            email="delete@example.com",
             password="Password123!",
             role=self.role,
             company=self.company
@@ -628,10 +684,9 @@ class UserAuthTests(APITestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertFalse(response.data["data"]["is_active"])
-        # Verify user still exists in database, but is deactivated
-        user.refresh_from_db()
-        self.assertFalse(user.is_active)
+        self.assertEqual(response.data["message"], "User deleted successfully")
+        # Verify user no longer exists in database
+        self.assertFalse(User.objects.filter(pk=user.pk).exists())
 
     def test_restore_soft_deleted_user(self):
         user = User.objects.create_superuser(
@@ -821,9 +876,9 @@ class UserAuthTests(APITestCase):
         permission = Permission.objects.create(
             company=self.company,
             module=module,
-            name="user.approve",
-            code="user:approve",
-            action="approve"
+            name="user.manage_pending",
+            code="user:manage_pending",
+            action="manage_pending"
         )
         permission_set = PermissionSet.objects.create(
             company=self.company,

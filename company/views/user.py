@@ -7,7 +7,7 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework import status
 
 from company.models import User, UserStatus
-from company.serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from company.serializers import RegisterSerializer, LoginSerializer, UserSerializer, UserOnboardSerializer
 from company.views.company import standard_response
 from company.mixins import PermissionCheckMixin
 
@@ -85,7 +85,7 @@ class UserListView(PermissionCheckMixin, APIView):
         if perm_error:
             return perm_error
 
-        users = User.objects.all().select_related('role', 'company').order_by('-date_joined')
+        users = User.objects.all().select_related('role', 'company', 'employee', 'employee__designation', 'employee__department').order_by('-date_joined')
         if not getattr(request.user, 'is_superuser', False):
             users = users.filter(is_superuser=False)
 
@@ -165,7 +165,10 @@ class UserDetailView(PermissionCheckMixin, APIView):
     module_code = 'user_management'
 
     def get_object(self, pk):
-        return get_object_or_404(User, pk=pk)
+        return get_object_or_404(
+            User.objects.select_related('role', 'company', 'employee', 'employee__designation', 'employee__department'),
+            pk=pk
+        )
 
     def get(self, request, pk):
         user = self.get_object(pk)
@@ -219,12 +222,12 @@ class UserDetailView(PermissionCheckMixin, APIView):
         if perm_error:
             return perm_error
         user = self.get_object(pk)
-        user.is_active = False
-        user.save()
+        user_data = UserSerializer(user, context={'request': request}).data
+        user.delete()
         return standard_response(
             status_code=status.HTTP_200_OK,
-            message="User deactivated successfully",
-            data=UserSerializer(user, context={'request': request}).data
+            message="User deleted successfully",
+            data=user_data
         )
 
 
@@ -256,10 +259,10 @@ class PendingUserListView(PermissionCheckMixin, APIView):
     module_code = 'user_management'
 
     def get(self, request):
-        perm_error = self.check_permission(request, action='view')
+        perm_error = self.check_permission(request, action='manage_pending')
         if perm_error:
             return perm_error
-        users = User.objects.filter(status=UserStatus.PENDING).select_related('role', 'company').order_by('-date_joined')
+        users = User.objects.filter(status=UserStatus.PENDING).select_related('role', 'company', 'employee', 'employee__designation', 'employee__department').order_by('-date_joined')
         if not getattr(request.user, 'is_superuser', False):
             users = users.filter(is_superuser=False)
 
@@ -308,7 +311,7 @@ class UserApproveView(PermissionCheckMixin, APIView):
     module_code = 'user_management'
 
     def post(self, request, pk):
-        perm_error = self.check_permission(request, action='approve')
+        perm_error = self.check_permission(request, action='manage_pending')
         if perm_error:
             return perm_error
         user = get_object_or_404(User, pk=pk)
@@ -328,7 +331,7 @@ class UserRejectView(PermissionCheckMixin, APIView):
     module_code = 'user_management'
 
     def post(self, request, pk):
-        perm_error = self.check_permission(request, action='reject')
+        perm_error = self.check_permission(request, action='manage_pending')
         if perm_error:
             return perm_error
         user = get_object_or_404(User, pk=pk)
@@ -339,3 +342,62 @@ class UserRejectView(PermissionCheckMixin, APIView):
             message="User rejected successfully",
             data=UserSerializer(user, context={'request': request}).data
         )
+
+
+class UserOnboardView(PermissionCheckMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserOnboardSerializer
+    module_code = "user_management"
+
+    def post(self, request):
+        perm_error = self.check_permission(request, action="create")
+        if perm_error:
+            return perm_error
+
+        serializer = UserOnboardSerializer(data=request.data, context={"request": request})
+        if serializer.is_valid():
+            user = serializer.save()
+            return standard_response(
+                status_code=status.HTTP_201_CREATED,
+                message="User onboarded successfully",
+                data=UserOnboardSerializer(user, context={"request": request}).data
+            )
+
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="User onboarding failed",
+            errors=serializer.errors
+        )
+
+
+class UserOnboardDetailView(PermissionCheckMixin, APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    serializer_class = UserOnboardSerializer
+    module_code = "user_management"
+
+    def get_object(self, pk):
+        return get_object_or_404(User, pk=pk)
+
+    def patch(self, request, pk):
+        perm_error = self.check_permission(request, action="edit")
+        if perm_error:
+            return perm_error
+
+        user = self.get_object(pk)
+        serializer = UserOnboardSerializer(user, data=request.data, partial=True, context={"request": request})
+        if serializer.is_valid():
+            user = serializer.save()
+            return standard_response(
+                status_code=status.HTTP_200_OK,
+                message="User onboard details updated successfully",
+                data=UserOnboardSerializer(user, context={"request": request}).data
+            )
+
+        return standard_response(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            message="User onboard details update failed",
+            errors=serializer.errors
+        )
+

@@ -1,5 +1,5 @@
 from .company import CompanySerializer, CompanyPublicListSerializer, DepartmentPublicSerializer, DesignationPublicSerializer
-from .user import UserSerializer, RegisterSerializer, LoginSerializer
+from .user import UserSerializer, RegisterSerializer, LoginSerializer, UserOnboardSerializer
 from .department import DepartmentSerializer, DepartmentPermissionSetSerializer
 from .designation import DesignationSerializer, DesignationPermissionSetSerializer
 from .employee import EmployeeSerializer

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from company.models import Department, DepartmentPermissionSet, Company
+from company.models import Department, DepartmentPermissionSet, Company, Designation
 from company.serializers.permission_set import PermissionSetSerializer
 
 
@@ -78,3 +78,24 @@ class DepartmentPermissionSetSerializer(serializers.ModelSerializer):
                 })
 
         return attrs
+
+
+class DesignationSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Designation
+        fields = ['id', 'name', 'code', 'is_active']
+
+
+class DepartmentDesignationListSerializer(serializers.ModelSerializer):
+    designations = DesignationSimpleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Department
+        fields = [
+            'id',
+            'name',
+            'code',
+            'is_active',
+            'designations'
+        ]
+

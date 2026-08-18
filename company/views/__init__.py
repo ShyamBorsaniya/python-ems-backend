@@ -1,11 +1,13 @@
 from .company import CompanyListCreateView, CompanyDetailView, standard_response, PublicCompanyListView
 from .user import (
     RegisterView, LoginView, UserListView, UserDetailView, UserRestoreView,
-    PendingUserListView, UserApproveView, UserRejectView
+    PendingUserListView, UserApproveView, UserRejectView,
+    UserOnboardView, UserOnboardDetailView
 )
 from .department import (
     DepartmentListCreateView, DepartmentDetailView,
-    DepartmentPermissionSetListCreateView, DepartmentPermissionSetDetailView
+    DepartmentPermissionSetListCreateView, DepartmentPermissionSetDetailView,
+    DepartmentDesignationListView
 )
 from .designation import (
     DesignationListCreateView, DesignationDetailView,

@@ -3,11 +3,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.shortcuts import get_object_or_404
-from django.db.models import Q
+from django.db.models import Q, Prefetch
 from django.core.paginator import Paginator
 
-from company.models import Department, DepartmentPermissionSet
-from company.serializers.department import DepartmentSerializer, DepartmentPermissionSetSerializer
+from company.models import Department, DepartmentPermissionSet, Designation
+from company.serializers.department import DepartmentSerializer, DepartmentPermissionSetSerializer, DepartmentDesignationListSerializer
 from company.views.company import standard_response
 from company.mixins import PermissionCheckMixin
 
@@ -294,3 +294,57 @@ class DepartmentPermissionSetDetailView(APIView):
             status_code=status.HTTP_200_OK,
             message="Department permission set deleted successfully"
         )
+
+
+class DepartmentDesignationListView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser]
+
+    def get(self, request):
+        departments = Department.objects.all()
+
+        # Company filtering
+        company_param = request.query_params.get("company", None)
+        if getattr(request.user, 'company', None):
+            departments = departments.filter(company=request.user.company)
+        elif company_param:
+            departments = departments.filter(company_id=company_param)
+
+        is_active_param = request.query_params.get("is_active", None)
+        if is_active_param is not None:
+            is_active = is_active_param.lower() in ["true", "1"]
+            departments = departments.filter(is_active=is_active)
+            departments = departments.prefetch_related(
+                Prefetch('designations', queryset=Designation.objects.filter(is_active=is_active))
+            )
+        else:
+            departments = departments.prefetch_related('designations')
+
+        departments = departments.order_by('name')
+
+        response_format = request.query_params.get("format", "nested").lower()
+
+        if response_format == "flat":
+            # {"department 1": ["designation 1", "designation 2"]}
+            data = {}
+            for dept in departments:
+                data[dept.name] = [des.name for des in dept.designations.all()]
+        elif response_format == "grouped":
+            # {"department 1": [{"id": 1, "name": "designation 1"}]}
+            data = {}
+            for dept in departments:
+                data[dept.name] = [
+                    {"id": des.id, "name": des.name, "code": des.code} 
+                    for des in dept.designations.all()
+                ]
+        else:
+            # Default nested list format
+            serializer = DepartmentDesignationListSerializer(departments, many=True)
+            data = serializer.data
+
+        return standard_response(
+            status_code=status.HTTP_200_OK,
+            message="Department and designations retrieved successfully",
+            data=data
+        )
+

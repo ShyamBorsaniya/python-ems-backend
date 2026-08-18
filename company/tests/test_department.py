@@ -275,3 +275,94 @@ class DepartmentAuthorizationAPITest(TestCase):
         response = self.client.get(self.department_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+
+class DepartmentDesignationAPITest(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.company = Company.objects.create(
+            name="Test Corp",
+            code="TEST"
+        )
+        self.role = Role.objects.create(name="Admin Role")
+        self.user = User.objects.create_user(
+            username="testadmin",
+            password="testpassword123",
+            email="admin@test.com",
+            role=self.role,
+            company=self.company,
+            is_superuser=True
+        )
+        self.client.force_authenticate(user=self.user)
+        
+        self.dept1 = Department.objects.create(
+            company=self.company,
+            name="Engineering",
+            code="ENG"
+        )
+        self.dept2 = Department.objects.create(
+            company=self.company,
+            name="HR",
+            code="HR"
+        )
+        
+        from company.models import Designation
+        self.des1 = Designation.objects.create(
+            company=self.company,
+            department=self.dept1,
+            name="Software Engineer",
+            code="SE"
+        )
+        self.des2 = Designation.objects.create(
+            company=self.company,
+            department=self.dept1,
+            name="Senior Engineer",
+            code="SSE",
+            is_active=False
+        )
+        
+        self.url = reverse("department-designation-list")
+
+    def test_get_department_designations_nested(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        
+        results = response.data["data"]
+        self.assertEqual(len(results), 2)
+        
+        eng_data = next(d for d in results if d["name"] == "Engineering")
+        self.assertEqual(len(eng_data["designations"]), 2)
+        des_names = [d["name"] for d in eng_data["designations"]]
+        self.assertIn("Software Engineer", des_names)
+        self.assertIn("Senior Engineer", des_names)
+
+    def test_get_department_designations_flat(self):
+        response = self.client.get(f"{self.url}?format=flat")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["data"]
+        
+        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results["Engineering"]), 2)
+        self.assertIn("Software Engineer", results["Engineering"])
+        self.assertEqual(results["HR"], [])
+
+    def test_get_department_designations_grouped(self):
+        response = self.client.get(f"{self.url}?format=grouped")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["data"]
+        
+        self.assertEqual(len(results), 2)
+        self.assertEqual(len(results["Engineering"]), 2)
+        self.assertEqual(results["Engineering"][0]["name"], "Software Engineer")
+        self.assertEqual(results["Engineering"][0]["code"], "SE")
+
+    def test_get_department_designations_is_active(self):
+        response = self.client.get(f"{self.url}?is_active=true")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        results = response.data["data"]
+        
+        eng_data = next(d for d in results if d["name"] == "Engineering")
+        self.assertEqual(len(eng_data["designations"]), 1)
+        self.assertEqual(eng_data["designations"][0]["name"], "Software Engineer")
+
+

@@ -24,6 +24,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'id',
+            'code',
             'created_at',
             'updated_at',
             'company_name',
@@ -34,14 +35,7 @@ class ProjectSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Project name is required.")
         return value.strip()
 
-    def validate_code(self, value):
-        if not value or not value.strip():
-            raise serializers.ValidationError("Project code is required.")
-        cleaned_code = value.strip().upper()
-        instance = self.instance
-        if Project.objects.filter(code=cleaned_code).exclude(pk=instance.pk if instance else None).exists():
-            raise serializers.ValidationError("A project with this project code already exists.")
-        return cleaned_code
+
 
     def validate(self, attrs):
         start_date = attrs.get('start_date', self.instance.start_date if self.instance else None)

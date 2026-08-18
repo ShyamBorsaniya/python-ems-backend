@@ -24,7 +24,7 @@ class Project(models.Model):
         related_name='projects'
     )
     name = models.CharField(max_length=255)
-    code = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=50, unique=True, blank=True)
     description = models.TextField(blank=True, null=True)
     start_date = models.DateField(blank=True, null=True)
     end_date = models.DateField(blank=True, null=True)
@@ -50,6 +50,18 @@ class Project(models.Model):
     class Meta:
         ordering = ['-created_at']
         verbose_name_plural = "Projects"
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            import string
+            import random
+            while True:
+                random_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+                new_code = f"PRO-{self.company.code}-{random_str}"
+                if not Project.objects.filter(code=new_code).exists():
+                    self.code = new_code
+                    break
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.code})"
