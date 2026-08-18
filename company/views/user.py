@@ -177,7 +177,7 @@ class UserDetailView(PermissionCheckMixin, APIView):
         )
 
     def put(self, request, pk):
-        perm_error = self.check_permission(request, action='update')
+        perm_error = self.check_permission(request, action='edit')
         if perm_error:
             return perm_error
         user = self.get_object(pk)
@@ -196,7 +196,7 @@ class UserDetailView(PermissionCheckMixin, APIView):
         )
 
     def patch(self, request, pk):
-        perm_error = self.check_permission(request, action='update')
+        perm_error = self.check_permission(request, action='edit')
         if perm_error:
             return perm_error
         user = self.get_object(pk)
