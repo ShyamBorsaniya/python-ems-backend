@@ -43,7 +43,7 @@ class UserAuthTests(APITestCase):
 
     def test_user_registration_inactive_status(self):
         data = self.user_data.copy()
-        data["status"] = UserStatus.INACTIVE
+        data["status"] = UserStatus.PENDING
         response = self.client.post(self.register_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["status_code"], 201)
@@ -66,6 +66,71 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("company", response.data["errors"])
+
+    def test_user_registration_creates_employee_profile(self):
+        from company.models import Department, Designation, Employee
+        self.company.code = "TC"
+        self.company.save()
+
+        department = Department.objects.create(company=self.company, name="HR", code="HR")
+        designation = Designation.objects.create(company=self.company, department=department, name="Manager", code="MGR")
+
+        data = self.user_data.copy()
+        data["username"] = "newemployee"
+        data["email"] = "newemployee@example.com"
+        data["department"] = department.id
+        data["designation"] = designation.id
+
+        response = self.client.post(self.register_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        user = User.objects.get(username="newemployee")
+        employee = Employee.objects.get(user=user)
+
+        self.assertEqual(employee.company, self.company)
+        self.assertEqual(employee.department, department)
+        self.assertEqual(employee.designation, designation)
+        
+        # Check employee code format: EMP-TC-{Year}-XXXX
+        import datetime
+        year = datetime.date.today().year
+        self.assertTrue(employee.code.startswith(f"EMP-TC-{year}-"))
+        self.assertEqual(len(employee.code), len(f"EMP-TC-{year}-") + 4)
+
+    def test_user_registration_without_dept_desig_creates_employee_profile(self):
+        from company.models import Employee
+        # self.company.code is not set here, so fallback "COMP" should be used
+        response = self.client.post(self.register_url, self.user_data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        user = User.objects.get(username="testuser")
+        employee = Employee.objects.get(user=user)
+
+        self.assertEqual(employee.company, self.company)
+        self.assertIsNone(employee.department)
+        self.assertIsNone(employee.designation)
+
+        import datetime
+        year = datetime.date.today().year
+        self.assertTrue(employee.code.startswith(f"EMP-COMP-{year}-"))
+        self.assertEqual(len(employee.code), len(f"EMP-COMP-{year}-") + 4)
+
+    def test_user_registration_with_invalid_dept_desig_fails(self):
+        from company.models import Department, Designation
+        other_company = Company.objects.create(name="Other Corp", code="OTHER")
+        other_dept = Department.objects.create(company=other_company, name="QA", code="QA")
+        other_desig = Designation.objects.create(company=other_company, department=other_dept, name="QA Tester", code="QAT")
+
+        data = self.user_data.copy()
+        data["username"] = "invaliddept"
+        data["email"] = "invaliddept@example.com"
+        data["department"] = other_dept.id
+        data["designation"] = other_desig.id
+
+        response = self.client.post(self.register_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("department", response.data["errors"])
+        self.assertIn("designation", response.data["errors"])
 
     def test_user_login_with_username(self):
         self.client.post(self.register_url, self.user_data, format="json")
@@ -268,7 +333,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("non_field_errors", response.data["errors"])
-        self.assertIn("your account has been inactivated please contact to admin", response.data["errors"]["non_field_errors"])
+        self.assertIn("your account has not activated, please contact to admin", response.data["errors"]["non_field_errors"])
 
     def test_login_inactive_user_status(self):
         User.objects.create_user(
@@ -277,7 +342,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.INACTIVE
+            status=UserStatus.PENDING
         )
         login_payload = {
             "username": "inactiveuser",
@@ -287,7 +352,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertFalse(response.data["success"])
         self.assertIn("non_field_errors", response.data["errors"])
-        self.assertIn("your account has been inactivated please contact to admin", response.data["errors"]["non_field_errors"])
+        self.assertIn("your account has not activated, please contact to admin", response.data["errors"]["non_field_errors"])
 
     def test_login_locked_user(self):
         User.objects.create_user(
@@ -296,7 +361,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.LOCKED
+            status=UserStatus.REJECTED
         )
         login_payload = {
             "username": "lockeduser",
@@ -605,7 +670,7 @@ class UserAuthTests(APITestCase):
     def test_user_default_status(self):
         response = self.client.post(self.register_url, self.user_data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["data"]["user"]["status"], "active")
+        self.assertEqual(response.data["data"]["user"]["status"], "approve")
 
     def test_update_user_status(self):
         user = User.objects.create_superuser(
@@ -617,9 +682,9 @@ class UserAuthTests(APITestCase):
         )
         self.client.force_authenticate(user=user)
         url = reverse("user-detail", kwargs={"pk": user.pk})
-        response = self.client.patch(url, {"status": "locked"}, format="json")
+        response = self.client.patch(url, {"status": "rejected"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["data"]["status"], "locked")
+        self.assertEqual(response.data["data"]["status"], "rejected")
 
     def test_list_users_filter_by_status(self):
         user1 = User.objects.create_user(
@@ -628,7 +693,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status="inactive"
+            status="pending"
         )
         user2 = User.objects.create_superuser(
             username="user_active",
@@ -636,10 +701,10 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status="active"
+            status="approve"
         )
         self.client.force_authenticate(user=user2)
-        url = f"{reverse('user-list')}?status=inactive"
+        url = f"{reverse('user-list')}?status=pending"
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["data"]["results"]), 1)
@@ -652,7 +717,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.INACTIVE
+            status=UserStatus.PENDING
         )
         other_company = Company.objects.create(name="Other Corp", code="OTHER_CORP", email="other@test.com")
         User.objects.create_user(
@@ -661,7 +726,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=other_company,
-            status=UserStatus.INACTIVE
+            status=UserStatus.PENDING
         )
         auth_user = User.objects.create_superuser(
             username="admin_user",
@@ -669,7 +734,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.ACTIVE
+            status=UserStatus.APPROVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-pending-list")
@@ -692,7 +757,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.INACTIVE
+            status=UserStatus.PENDING
         )
         auth_user = User.objects.create_superuser(
             username="approver",
@@ -700,16 +765,16 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.ACTIVE
+            status=UserStatus.APPROVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-approve", kwargs={"pk": user_pending.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["data"]["status"], UserStatus.ACTIVE)
+        self.assertEqual(response.data["data"]["status"], UserStatus.APPROVE)
         user_pending.refresh_from_db()
-        self.assertEqual(user_pending.status, UserStatus.ACTIVE)
+        self.assertEqual(user_pending.status, UserStatus.APPROVE)
 
     def test_reject_user(self):
         user_pending = User.objects.create_user(
@@ -718,7 +783,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.INACTIVE
+            status=UserStatus.PENDING
         )
         auth_user = User.objects.create_superuser(
             username="rejector",
@@ -726,16 +791,16 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.ACTIVE
+            status=UserStatus.APPROVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-reject", kwargs={"pk": user_pending.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["data"]["status"], UserStatus.LOCKED)
+        self.assertEqual(response.data["data"]["status"], UserStatus.REJECTED)
         user_pending.refresh_from_db()
-        self.assertEqual(user_pending.status, UserStatus.LOCKED)
+        self.assertEqual(user_pending.status, UserStatus.REJECTED)
 
     def test_approve_reject_unauthenticated(self):
         url_approve = reverse("user-approve", kwargs={"pk": 1})
@@ -779,7 +844,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.INACTIVE
+            status=UserStatus.PENDING
         )
         auth_user = User.objects.create_user(
             username="approver",
@@ -787,16 +852,16 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=approver_role,
             company=self.company,
-            status=UserStatus.ACTIVE
+            status=UserStatus.APPROVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-approve", kwargs={"pk": user_pending.pk})
         response = self.client.post(url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["data"]["status"], UserStatus.ACTIVE)
+        self.assertEqual(response.data["data"]["status"], UserStatus.APPROVE)
         user_pending.refresh_from_db()
-        self.assertEqual(user_pending.status, UserStatus.ACTIVE)
+        self.assertEqual(user_pending.status, UserStatus.APPROVE)
 
     def test_approve_user_without_permission_fails(self):
         user_pending = User.objects.create_user(
@@ -805,7 +870,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.INACTIVE
+            status=UserStatus.PENDING
         )
         auth_user = User.objects.create_user(
             username="unauthorized_approver",
@@ -813,7 +878,7 @@ class UserAuthTests(APITestCase):
             password="Password123!",
             role=self.role,
             company=self.company,
-            status=UserStatus.ACTIVE
+            status=UserStatus.APPROVE
         )
         self.client.force_authenticate(user=auth_user)
         url = reverse("user-approve", kwargs={"pk": user_pending.pk})

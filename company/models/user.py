@@ -3,9 +3,9 @@ from django.db import models
 
 
 class UserStatus(models.TextChoices):
-    ACTIVE = 'active', 'Active'
-    INACTIVE = 'inactive', 'Inactive'
-    LOCKED = 'locked', 'Locked'
+    PENDING = 'pending', 'Pending'
+    APPROVE = 'approve', 'Approve'
+    REJECTED = 'rejected', 'Rejected'
 
 
 class User(AbstractUser):
@@ -29,7 +29,7 @@ class User(AbstractUser):
     status = models.CharField(
         max_length=20,
         choices=UserStatus.choices,
-        default=UserStatus.ACTIVE
+        default=UserStatus.APPROVE
     )
     last_login_at = models.DateTimeField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

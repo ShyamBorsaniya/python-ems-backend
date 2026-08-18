@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
-from company.models import User, UserStatus, Role, Company
+from django.db import transaction
+from django.utils import timezone
+import random
+import string
+from company.models import User, UserStatus, Role, Company, Department, Designation, Employee
 from company.serializers.company import CompanySerializer
 
 
@@ -57,6 +61,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         write_only=True,
         min_length=8
     )
+    department = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True
+    )
+    designation = serializers.PrimaryKeyRelatedField(
+        queryset=Designation.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True
+    )
 
     class Meta:
         model = User
@@ -69,15 +85,37 @@ class RegisterSerializer(serializers.ModelSerializer):
             "company",
             "role",
             "status",
+            "department",
+            "designation",
         ]
         extra_kwargs = {
-            "status": {"required": False, "default": UserStatus.ACTIVE}
+            "status": {"required": False, "default": UserStatus.APPROVE}
         }
+
+    def validate(self, attrs):
+        company = attrs.get('company')
+        department = attrs.get('department')
+        designation = attrs.get('designation')
+        errors = {}
+
+        if department and company and department.company_id != company.id:
+            errors["department"] = "Department does not belong to the selected company."
+
+        if designation and company and designation.company_id != company.id:
+            errors["designation"] = "Designation does not belong to the selected company."
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return attrs
 
     def create(self, validated_data):
         role = validated_data.pop("role")
         company = validated_data.pop("company")
         status_val = validated_data.pop("status", None)
+        department = validated_data.pop("department", None)
+        designation = validated_data.pop("designation", None)
+
         create_kwargs = {
             "username": validated_data["username"],
             "email": validated_data["email"],
@@ -89,7 +127,30 @@ class RegisterSerializer(serializers.ModelSerializer):
         }
         if status_val:
             create_kwargs["status"] = status_val
-        user = User.objects.create_user(**create_kwargs)
+
+        with transaction.atomic():
+            user = User.objects.create_user(**create_kwargs)
+
+            # Auto Generate employee code in this format:
+            # EMP-{Company code}-{Year}-{random 4 digits include alphabet and numbers}
+            company_code = company.code.strip().upper() if company.code else "COMP"
+            year = timezone.now().year
+            
+            while True:
+                random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+                code = f"EMP-{company_code}-{year}-{random_suffix}"
+                if not Employee.objects.filter(company=company, code=code).exists():
+                    break
+
+            Employee.objects.create(
+                user=user,
+                company=company,
+                code=code,
+                department=department,
+                designation=designation,
+                joining_date=timezone.now().date()
+            )
+
         return user
 
 
@@ -118,13 +179,13 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError("Invalid credentials.")
 
         if not user.is_active:
-            raise serializers.ValidationError("your account has been inactivated please contact to admin")
+            raise serializers.ValidationError("Your account is inactive, please contact to admin for further query")
 
-        if user.status == UserStatus.INACTIVE:
-            raise serializers.ValidationError("your account has been inactivated please contact to admin")
+        if user.status == UserStatus.PENDING:
+            raise serializers.ValidationError("Your account is pending, please contact to admin for further query")
 
-        if user.status == UserStatus.LOCKED:
-            raise serializers.ValidationError("your account has been locked, contact to admin for further query")
+        if user.status == UserStatus.REJECTED:
+            raise serializers.ValidationError("Your account has been rejected, please contact to admin for further query")
 
         attrs["user"] = user
         return attrs

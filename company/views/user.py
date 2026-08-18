@@ -22,7 +22,7 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            if user.status == UserStatus.INACTIVE:
+            if user.status == UserStatus.PENDING:
                 return standard_response(
                     status_code=status.HTTP_201_CREATED,
                     message="you are registered successfully, please wait until admin can approve your account"
@@ -259,7 +259,7 @@ class PendingUserListView(PermissionCheckMixin, APIView):
         perm_error = self.check_permission(request, action='view')
         if perm_error:
             return perm_error
-        users = User.objects.filter(status=UserStatus.INACTIVE).select_related('role', 'company').order_by('-date_joined')
+        users = User.objects.filter(status=UserStatus.PENDING).select_related('role', 'company').order_by('-date_joined')
         if not getattr(request.user, 'is_superuser', False):
             users = users.filter(is_superuser=False)
 
@@ -312,7 +312,7 @@ class UserApproveView(PermissionCheckMixin, APIView):
         if perm_error:
             return perm_error
         user = get_object_or_404(User, pk=pk)
-        user.status = UserStatus.ACTIVE
+        user.status = UserStatus.APPROVE
         user.save()
         return standard_response(
             status_code=status.HTTP_200_OK,
@@ -332,7 +332,7 @@ class UserRejectView(PermissionCheckMixin, APIView):
         if perm_error:
             return perm_error
         user = get_object_or_404(User, pk=pk)
-        user.status = UserStatus.LOCKED
+        user.status = UserStatus.REJECTED
         user.save()
         return standard_response(
             status_code=status.HTTP_200_OK,

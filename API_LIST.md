@@ -59,7 +59,7 @@ Complete API reference for the Employee Management System (EMS) Backend API. Eve
 * **Method**: `POST`
 * **URL Path**: `/api/user/login/`
 * **Authentication**: Public (`AllowAny`)
-* **Description**: Authenticates user credentials (username or email and password) and returns JWT access token, refresh token, and user profile data. If the user account is inactive (`is_active=False`), returns a 400 Bad Request error with `"your account has been inactivated please contact to admin"`. If status is pending, returns `"your account has been waiting to approval"`. If status is rejected, returns `"your account has been terminited, contact to admin for ferther query"`.
+* **Description**: Authenticates user credentials (username or email and password) and returns JWT access token, refresh token, and user profile data. If the user account is inactive (`is_active=False`), returns a 400 Bad Request error with `"your account has not activated, please contact to admin"`. If status is pending, returns `"your account has been waiting to approval"`. If status is rejected, returns `"your account has been terminited, contact to admin for ferther query"`.
 * **Request Body**: `username` (or `email`), `password`
 * **Response Status**: `200 OK` (or `400 Bad Request` if invalid, inactive, pending, or rejected)
 
