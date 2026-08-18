@@ -25,7 +25,7 @@ class RegisterView(APIView):
             if user.status == UserStatus.INACTIVE:
                 return standard_response(
                     status_code=status.HTTP_201_CREATED,
-                    message="you are registered successfully but your account is inactive, please wait until admin can activate it"
+                    message="you are registered successfully, please wait until admin can approve your account"
                 )
 
             return standard_response(

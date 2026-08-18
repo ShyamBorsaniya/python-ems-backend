@@ -48,7 +48,7 @@ class UserAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data["status_code"], 201)
         self.assertTrue(response.data["success"])
-        self.assertEqual(response.data["message"], "you are registered successfully but your account is inactive, please wait until admin can activate it")
+        self.assertEqual(response.data["message"], "you are registered successfully, please wait until admin can approve your account")
         self.assertNotIn("data", response.data)
 
     def test_user_registration_without_role_fails(self):
