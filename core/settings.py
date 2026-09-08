@@ -35,9 +35,9 @@ DEBUG = os.getenv("DEBUG", "True").lower() in ("true", "1", "t", "yes")
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv("ALLOWED_HOSTS", "").split(",")
+    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
     if host.strip()
-]
+] or ["localhost", "127.0.0.1"]
 
 AUTH_USER_MODEL = "company.User"
 
